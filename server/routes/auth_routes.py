@@ -11,7 +11,6 @@ auth_service = AuthService(user_repository)
 
 @auth_bp.route("/register", methods=["POST"])
 def signup():
-    print("METHOD:", request.method)
     data = request.get_json()
 
     email = data.get("email")

@@ -32,7 +32,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || `${endpoint} failed`);
+        setError(data.error);
+        return;
       }
 
       setUser(data.user);
@@ -41,10 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem("token", data.token);
 
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Something went wrong";
-
-      setError(message);
+      setError("Something went wrong. Please try again later.");
 
       throw err;
 

@@ -31,6 +31,10 @@ class AuthService:
         
         if len(password) < 6:
             raise ValueError("Password must be at least 6 characters")
+        #check if user already exists
+        existing_user = self.user_repo.get_by_email(email)
+        if existing_user:
+            raise ValueError("User with this email already exists")
         
         # Delegate to repository (which handles Supabase auth)
         user, token = self.user_repo.create_user_with_auth(email, password)
