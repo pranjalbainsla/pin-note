@@ -1,11 +1,12 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 import {
   LoginPage,
   RegisterPage,
-  NotesPage,
+  Editor,
+  HomePage
 } from "./pages";
 
 function App() {
@@ -17,17 +18,16 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
 
           <Route path="/register" element={<RegisterPage />} />
+          <Route path='/home' element={<HomePage />} />
 
           <Route
-            path="/notes"
+            path="/editor/:noteId"
             element={
               <ProtectedRoute>
-                <NotesPage />
+                <Editor />
               </ProtectedRoute>
             }
           />
-
-          <Route path="*" element={<Navigate to="/login" replace />} />
 
         </Routes>
       </AuthProvider>

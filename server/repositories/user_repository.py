@@ -77,7 +77,25 @@ class SupabaseUserRepository(IUserRepository):
             return user, token
         except Exception as e:
             raise ValueError("Invalid email or password")
+        
+    def validate_token(self, token: str) -> User:
+        """Validate access token and return authenticated user"""
 
+        try:
+            print(token)
+            response = supabase.auth.get_user(token)
+
+            if not response.user:
+                return None
+
+            return User(
+                id=response.user.id,
+                email=response.user.email
+            )
+
+        except Exception:
+            return None
+        
     def get_by_email(self, email: str) -> User:
         """Get user by email from Supabase"""
         try:

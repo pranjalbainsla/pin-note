@@ -1,10 +1,10 @@
 import { createContext, useContext, useState } from "react";
 import type { ReactNode } from "react";
 import type { User, AuthContextType } from "../types";
+import { API_BASE_URL } from "../config";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const API_BASE_URL = "http://localhost:5000/api/auth";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -21,7 +21,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/${endpoint}`, {
+      const res = await fetch(`${API_BASE_URL}/auth/${endpoint}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error);
+        setError(data.message);
         return;
       }
 
@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = (email: string, password: string) => {
     return authenticate("register", email, password);
   };
-
+  
   const logout = () => {
     setUser(null);
     setToken(null);

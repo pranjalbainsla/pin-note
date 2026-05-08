@@ -14,7 +14,7 @@ export default function LoginPage() {
     e.preventDefault();
     try {
       await login(email, password);
-      navigate('/notes');
+      navigate('/home');
       // optionally redirect here
     } catch (err) {
       // error already handled in context

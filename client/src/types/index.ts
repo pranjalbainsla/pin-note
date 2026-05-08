@@ -12,3 +12,10 @@ export type AuthContextType = {
   logout: () => void;
   isAuthenticated: boolean;
 };
+export type Note = {
+    id: string;
+    title: string;
+    content: string | null;
+    created_at: string | null;
+    updated_at: string | null;
+}
