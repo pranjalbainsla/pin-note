@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { Folder, X } from "lucide-react";
 import { createNote } from "../services/notesService";
 import MyNotesFolder from "./MyNotesFolder";
+import MiscFolder from "./MiscFolder";
 
 export default function HomePage() {
   const navigate = useNavigate();
 
   const [showFolders, setShowFolders] = useState(false);
   const [showMyNotes, setShowMyNotes] = useState(false);
+  const [showMiscFolder, setShowMiscFolder] = useState(false);
   const [creating, setCreating] = useState(false);
 
   const handleCreateNote = async () => {
@@ -91,7 +93,7 @@ export default function HomePage() {
                     </span>
                 </div>
 
-              <div className="flex flex-col items-center cursor-pointer group">
+              <div onClick={() => setShowMiscFolder(true)} className="flex flex-col items-center cursor-pointer group">
                 <Folder
                   size={72}
                   className="text-blue-500 group-hover:scale-105 transition"
@@ -106,6 +108,7 @@ export default function HomePage() {
         </>
       )}
       {showMyNotes && <MyNotesFolder setShowMyNotes={setShowMyNotes} />}
+      {showMiscFolder && <MiscFolder setShowMiscFolder={setShowMiscFolder} />}
     </div>
   );
 }

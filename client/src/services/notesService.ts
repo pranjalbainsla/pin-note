@@ -16,8 +16,13 @@ export async function getNotes() {
     }
   });
   if (!res.ok) {
+    if (res.status === 401) {
+        localStorage.removeItem("token");
+        window.location.href = "/login";
+        return;
+    }
     const data = await res.json();
-    throw new Error(data.error || "Failed to fetch notes");
+    throw new Error(data.message || "Failed to fetch notes");
   }
   return res.json();
 }
@@ -30,8 +35,13 @@ export async function getNoteById(noteId: string) {
     }
   });
   if (!res.ok) {
+    if (res.status === 401) {
+        localStorage.removeItem("token");
+        window.location.href = "/login";
+        return;
+    }
     const data = await res.json();
-    throw new Error(data.error || "Failed to fetch note");
+    throw new Error(data.message || "Failed to fetch note");
   }
   return res.json();
 }
@@ -49,8 +59,13 @@ export async function createNote(title: string = "", content: string = "") {
   });
 
   if (!res.ok) {
+    if (res.status === 401) {
+      localStorage.removeItem("token");
+      window.location.href = "/login";
+      return;
+    }
     const data = await res.json();
-    throw new Error(data.error || "Failed to create note");
+    throw new Error(data.message || "Failed to create note");
   }
 
   return res.json();
@@ -73,8 +88,13 @@ export async function updateNote(
   });
 
   if (!res.ok) {
+    if (res.status === 401) {
+      localStorage.removeItem("token");
+      window.location.href = "/login";
+      return;
+    }
     const data = await res.json();
-    throw new Error(data.error || "Failed to update note");
+    throw new Error(data.message || "Failed to update note");
   }
 
   return res.json();

@@ -19,3 +19,12 @@ export type Note = {
     created_at: string | null;
     updated_at: string | null;
 }
+export type Pin = {
+    id: string;
+    user_id: string;
+    source_type: string | null;
+    source_url: string | null;
+    title: string;
+    summary: string;
+    created_at: string | null;
+}

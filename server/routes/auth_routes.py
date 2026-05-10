@@ -18,15 +18,15 @@ def signup():
 
     # validate
     if not email or not password:
-        return {"message": "Invalid input"}, 400
+        return {"status": "error", "message": "Invalid input"}, 400
 
     try:
         result = auth_service.signup(email, password)
         return result, 201
     except ValueError as e:
-        return {"message": str(e)}, 400
+        return {"status": "error", "message": str(e)}, 400
     except Exception:
-        return {"message": "Something went wrong"}, 500
+        return {"status": "error", "message": "Something went wrong"}, 500
 
 
 @auth_bp.route("/login", methods=["POST"])
@@ -39,6 +39,7 @@ def login():
 
     if not email or not password:
         return {
+            "status": "error",
             "message": "Email and password are required"
         }, 400
 
@@ -48,11 +49,13 @@ def login():
 
     except ValueError as e:
         return {
+            "status": "error",
             "message": str(e)
         }, 401
 
     except Exception:
         return {
+            "status": "error",
             "message": "Something went wrong"
         }, 500
     
