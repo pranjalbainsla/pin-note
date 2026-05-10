@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FileText } from "lucide-react";
-import { getNotes } from "../services/notesService";
-import type { Note } from "../types";
+import { getNotes } from "../../services/notesService";
+import type { Note } from "../../types";
 
 
-export default function MyNotesFolder({ setShowMyNotes }: { setShowMyNotes: (show: boolean) => void }) {
+export default function MyNotesFolderPage({ setShowMyNotes }: { setShowMyNotes: (show: boolean) => void }) {
   const [notes, setNotes] = useState<Note[]>([]);
   const navigate = useNavigate();
 

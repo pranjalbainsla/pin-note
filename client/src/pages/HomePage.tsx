@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Folder, X } from "lucide-react";
 import { createNote } from "../services/notesService";
-import MyNotesFolder from "./MyNotesFolder";
-import MiscFolder from "./MiscFolder";
+import MyNotesFolder from "./folderPages/MyNotesFolderPage";
+import MiscFolder from "./folderPages/MiscFolderPage";
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -46,6 +46,9 @@ export default function HomePage() {
         >
           View Folders
         </button>
+        <Link to="/" className="text-sm text-neutral-500 hover:text-black transition">
+          Logout
+        </Link>
       </div>
 
       {showFolders && (

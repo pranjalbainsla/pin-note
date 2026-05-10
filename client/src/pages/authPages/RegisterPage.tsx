@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import { Link, useNavigate } from "react-router-dom";
 
 export default function RegisterPage() {
@@ -14,7 +14,7 @@ export default function RegisterPage() {
     try {
       await register(email, password);
       // optionally redirect here
-      navigate('/notes');
+      navigate('/home');
     } catch (err) {
       // error already handled in context
     }
@@ -74,7 +74,7 @@ export default function RegisterPage() {
             )}
 
             <Link
-                to="/login"
+                to="/"
                 className="block mt-6 text-sm text-neutral-500 hover:text-black transition"
             >
                 Already have an account? Log in

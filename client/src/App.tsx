@@ -5,9 +5,9 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import {
   LoginPage,
   RegisterPage,
-  Editor,
-  HomePage
-} from "./pages";
+} from "./pages/authPages";
+import HomePage from "./pages/HomePage";
+import Editor from "./pages/notesPages/Editor";
 
 function App() {
   return (
@@ -15,7 +15,7 @@ function App() {
       <AuthProvider>
         <Routes>
 
-          <Route path="/login" element={<LoginPage />} />
+          <Route path="/" element={<LoginPage />} />
 
           <Route path="/register" element={<RegisterPage />} />
           <Route path='/home' element={<HomePage />} />

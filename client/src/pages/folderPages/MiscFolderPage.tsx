@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Folder, Link2, Loader2 } from "lucide-react";
-import { createPin } from "../services/pinsService";
+import { createPin } from "../../services/pinsService";
 
-export default function MiscFolder({ setShowMiscFolder }: { setShowMiscFolder: (show: boolean) => void }) {
+export default function MiscFolderPage({ setShowMiscFolder }: { setShowMiscFolder: (show: boolean) => void }) {
 
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
