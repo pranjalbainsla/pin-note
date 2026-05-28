@@ -43,8 +43,11 @@ export function usePins() {
 
   const insertPin = useCallback((pin: Pin) => {
     setShowPinsPopup(false);
-    setFloatingPins((prev) => [...prev, { ...pin, ...DEFAULT_PIN_POSITION }]);
+    setFloatingPins((prev) => [...prev.filter((p) => p.id !== pin.id), { ...pin, ...DEFAULT_PIN_POSITION }]);
   }, []);
+  const removePin = (id: string) => {
+    setFloatingPins((prev) => prev.filter((p) => p.id !== id));
+  };
 
-  return { showPinsPopup, closePinsPopup, pins, floatingPins, error, openPinsPopup, insertPin };
+  return { showPinsPopup, closePinsPopup, pins, floatingPins, error, openPinsPopup, insertPin, removePin };
 }

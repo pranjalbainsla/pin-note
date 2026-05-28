@@ -1,4 +1,4 @@
-import PinCard from "../PinCard";
+import PinCard from "../pins/PinCard";
 import type { Pin } from "../../types";
 
 interface PinsPopupProps {

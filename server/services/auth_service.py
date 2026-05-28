@@ -58,9 +58,8 @@ class AuthService:
         Raises:
             ValueError: If credentials are invalid
         """
-        # Validation
-        if not email or not password:
-            raise ValueError("Email and password are required")
+        # Validation -> check if valid email address
+        
         
         # Delegate to repository (which handles Supabase auth)
         user, token = self.user_repo.authenticate_user(email, password)

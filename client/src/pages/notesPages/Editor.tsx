@@ -22,7 +22,7 @@ export default function Editor() {
   const { title, setTitle, isLoading, isSaving, error, editorRef, fetchNote, saveNote } =
     useNote(noteId);
   const { scheduleAutoSave } = useAutoSave(saveNote, AUTOSAVE_DELAY_MS);
-  const { showPinsPopup, closePinsPopup, pins, floatingPins, openPinsPopup, insertPin } =
+  const { showPinsPopup, closePinsPopup, pins, floatingPins, openPinsPopup, insertPin, removePin } =
     usePins();
 
   useEffect(() => {
@@ -87,7 +87,7 @@ export default function Editor() {
       )}
 
       {floatingPins.map((pin) => (
-        <FloatingPin key={pin.id} pin={pin} />
+        <FloatingPin key={pin.id} pin={pin} onClose={removePin} />
       ))}
     </div>
   );

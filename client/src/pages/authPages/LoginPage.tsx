@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 
 export default function LoginPage() {
-  const { login, isLoading, error} = useAuth();
+  const { login, isLoading, error } = useAuth();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
@@ -19,6 +19,7 @@ export default function LoginPage() {
     } catch (err) {
       // error already handled in context
     }
+
   };
 
     return (

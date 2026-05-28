@@ -18,7 +18,7 @@ export async function getNotes() {
   if (!res.ok) {
     if (res.status === 401) {
         localStorage.removeItem("token");
-        window.location.href = "/login";
+        window.location.href = "/";
         return;
     }
     const data = await res.json();
@@ -37,7 +37,7 @@ export async function getNoteById(noteId: string) {
   if (!res.ok) {
     if (res.status === 401) {
         localStorage.removeItem("token");
-        window.location.href = "/login";
+        window.location.href = "/";
         return;
     }
     const data = await res.json();
@@ -61,7 +61,7 @@ export async function createNote(title: string = "", content: string = "") {
   if (!res.ok) {
     if (res.status === 401) {
       localStorage.removeItem("token");
-      window.location.href = "/login";
+      window.location.href = "/";
       return;
     }
     const data = await res.json();
@@ -90,7 +90,7 @@ export async function updateNote(
   if (!res.ok) {
     if (res.status === 401) {
       localStorage.removeItem("token");
-      window.location.href = "/login";
+      window.location.href = "/";
       return;
     }
     const data = await res.json();

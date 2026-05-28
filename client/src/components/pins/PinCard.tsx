@@ -1,4 +1,4 @@
-import type { Pin } from "../types/index";
+import type { Pin } from "../../types";
 
 interface PinCardProps {
   pin: Pin;

@@ -68,15 +68,13 @@ class SupabaseUserRepository(IUserRepository):
                 "password": password
             })
             
-            if not response.user or not response.session:
-                raise ValueError("Invalid credentials")
-            
             user = User(id=response.user.id, email=response.user.email)
             token = response.session.access_token
             
             return user, token
         except Exception as e:
-            raise ValueError("Invalid email or password")
+            print("Error authenticating user:", e)
+            raise ValueError(str(e))
         
     def validate_token(self, token: str) -> User:
         """Validate access token and return authenticated user"""

@@ -1,26 +1,14 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FileText } from "lucide-react";
 import { getNotes } from "../../services/notesService";
 import type { Note } from "../../types";
+import { useQuery } from "@tanstack/react-query";
 
 
 export default function MyNotesFolderPage({ setShowMyNotes }: { setShowMyNotes: (show: boolean) => void }) {
-  const [notes, setNotes] = useState<Note[]>([]);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const fetchNotes = async () => {
-      try {
-        const response = await getNotes();
-        setNotes(response.notes);
-      } catch (err) {
-        console.error("Failed to fetch notes:", err);
-      }
-    };
-
-    fetchNotes();
-  }, []);
+  const { data, error, isLoading } = useQuery({ queryKey: ['notes'], queryFn: getNotes });
 
   const stripHTML = (html: string) => {
     const div = document.createElement("div");
@@ -30,7 +18,8 @@ export default function MyNotesFolderPage({ setShowMyNotes }: { setShowMyNotes: 
 
   return (
     <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[900px] min-h-[600px] bg-white rounded-3xl shadow-2xl border border-neutral-200 overflow-hidden">
-
+      {isLoading && <div>Loading...</div>}
+      {error && <div>{error instanceof Error ? error.message : "An error occurred"}</div>}
       {/* mac window top bar */}
       <div className="flex items-center gap-2 px-5 py-3 border-b border-neutral-100 bg-neutral-50">
         <div className="w-3 h-3 rounded-full bg-red-400">
@@ -44,7 +33,7 @@ export default function MyNotesFolderPage({ setShowMyNotes }: { setShowMyNotes: 
       {/* notes grid */}
       <div className="p-8 grid grid-cols-3 gap-6">
 
-        {notes.map((note) => (
+        {data?.notes.map((note) => (
           <div
             key={note.id}
             onClick={() => navigate(`/editor/${note.id}`)}
