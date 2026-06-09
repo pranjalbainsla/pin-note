@@ -1,6 +1,7 @@
 from flask import request, Blueprint
 from services.auth_service import AuthService
 from repositories.user_repository import SupabaseUserRepository
+from exceptions import ValidationError
 
 auth_bp = Blueprint("/api/auth", __name__)
 
@@ -31,34 +32,15 @@ def signup():
 
 @auth_bp.route("/login", methods=["POST"])
 def login():
-
     data = request.get_json()
-
     email = data.get("email")
     password = data.get("password")
 
     if not email or not password:
-        return {
-            "status": "error",
-            "message": "Email and password are required"
-        }, 400
+        raise ValidationError("Email and password are required")
 
-    try:
-        result = auth_service.login(email, password)
-        return result, 200
-
-    except ValueError as e:
-        return {
-            "status": "error",
-            "message": str(e)
-        }, 401
-
-    except Exception:
-        return {
-            "status": "error",
-            "message": "Something went wrong"
-        }, 500
-    
+    result = auth_service.login(email, password)
+    return result, 200
 
     
 

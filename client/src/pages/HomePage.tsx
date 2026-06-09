@@ -7,8 +7,8 @@ import MiscFolder from "./folderPages/MiscFolderPage";
 
 export default function HomePage() {
   const navigate = useNavigate();
-
   const [showFolders, setShowFolders] = useState(false);
+  //TODO: change cross button to add close functionality to red button in top left of mac style window
   const [showMyNotes, setShowMyNotes] = useState(false);
   const [showMiscFolder, setShowMiscFolder] = useState(false);
   const [creating, setCreating] = useState(false);

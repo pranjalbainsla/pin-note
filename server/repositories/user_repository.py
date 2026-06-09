@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
+import email
 from utils.supabase_client import supabase
 from models.user import User
+from exceptions import InvalidCredentialsError
+from gotrue.errors import AuthApiError  # supabase's own exception
 
 
 class IUserRepository(ABC):
@@ -67,14 +70,14 @@ class SupabaseUserRepository(IUserRepository):
                 "email": email,
                 "password": password
             })
-            
-            user = User(id=response.user.id, email=response.user.email)
-            token = response.session.access_token
-            
-            return user, token
-        except Exception as e:
-            print("Error authenticating user:", e)
-            raise ValueError(str(e))
+        except AuthApiError:
+            # Supabase explicitly rejected the credentials
+            raise InvalidCredentialsError()
+        # anything else (network, timeout, etc.) bubbles up as a real 500
+
+        user = User(id=response.user.id, email=response.user.email)
+        token = response.session.access_token
+        return user, token
         
     def validate_token(self, token: str) -> User:
         """Validate access token and return authenticated user"""

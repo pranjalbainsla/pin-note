@@ -5,7 +5,6 @@ import { API_BASE_URL } from "../config";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -32,7 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || "Login failed");
+        throw new Error(data.message ||"Login failed");
       }
 
       setUser(data.user);
@@ -40,18 +39,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       localStorage.setItem("token", data.token);
 
-    } catch (error) {
-      //im not sure if this will help
-      if (error instanceof Error) {
-        setError(error.message);
-      } else{
-        setError("Something went wrong");
-      }
-      throw error;
+ } catch (err) {
+    console.error("Authentication error:", err);
 
-    } finally {
-      setIsLoading(false);
-    }
+    const message =
+      err.message || // backend message
+      "Unable to connect to the server. Please try again later.";
+
+    setError(message);
+    throw err;
+  } finally {
+    setIsLoading(false);
+  }
   };
 
   const login = (email: string, password: string) => {

@@ -1,4 +1,6 @@
+import re
 from repositories.user_repository import IUserRepository
+from exceptions import ValidationError
 
 
 class AuthService:
@@ -59,7 +61,8 @@ class AuthService:
             ValueError: If credentials are invalid
         """
         # Validation -> check if valid email address
-        
+        if not re.fullmatch(r"[^@]+@[^@]+\.[^@]+", email):
+            raise ValidationError("Invalid email format")
         
         # Delegate to repository (which handles Supabase auth)
         user, token = self.user_repo.authenticate_user(email, password)
