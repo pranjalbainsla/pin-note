@@ -1,9 +1,14 @@
 from abc import ABC, abstractmethod
-import email
 from utils.supabase_client import supabase
 from models.user import User
-from exceptions import InvalidCredentialsError
-from gotrue.errors import AuthApiError  # supabase's own exception
+from exceptions import (
+    InvalidCredentialsError,
+    ValidationError,
+    ConflictError,
+    UnauthorizedError,
+)
+from gotrue.errors import AuthApiError
+from postgrest.exceptions import APIError
 
 
 class IUserRepository(ABC):
@@ -13,12 +18,13 @@ class IUserRepository(ABC):
     def create_user_with_auth(self, email: str, password: str) -> tuple:
         """
         Create user via auth and return (user, token)
-        
+
         Returns:
             Tuple of (User, access_token)
-            
+
         Raises:
-            ValueError: If signup fails
+            ConflictError: If the email is already registered
+            ValidationError: If signup data is invalid
         """
         pass
 
@@ -26,12 +32,12 @@ class IUserRepository(ABC):
     def authenticate_user(self, email: str, password: str) -> tuple:
         """
         Authenticate user and return (user, token)
-        
+
         Returns:
             Tuple of (User, access_token)
-            
+
         Raises:
-            ValueError: If credentials invalid
+            InvalidCredentialsError: If credentials are invalid
         """
         pass
 
@@ -51,17 +57,20 @@ class SupabaseUserRepository(IUserRepository):
                 "email": email,
                 "password": password
             })
-            
-            if not response.user:
-                raise ValueError("Failed to create user")
-            
-            user = User(id=response.user.id, email=response.user.email)
-            token = response.session.access_token if response.session else None
-            
-            return user, token
-        except Exception as e:
-            print("Error creating user:", e)
-            raise ValueError(str(e))
+        except AuthApiError as e:
+            if e.code == "user_already_exists":
+                raise ConflictError("User with this email already exists")
+            if e.code in ("weak_password", "validation_failed"):
+                raise ValidationError(e.message or "Invalid signup data")
+            raise
+
+        if not response.user:
+            raise ValidationError("Failed to create user")
+
+        user = User(id=response.user.id, email=response.user.email)
+        token = response.session.access_token if response.session else None
+
+        return user, token
 
     def authenticate_user(self, email: str, password: str) -> tuple:
         """Authenticate user with Supabase auth"""
@@ -71,32 +80,27 @@ class SupabaseUserRepository(IUserRepository):
                 "password": password
             })
         except AuthApiError:
-            # Supabase explicitly rejected the credentials
             raise InvalidCredentialsError()
-        # anything else (network, timeout, etc.) bubbles up as a real 500
 
         user = User(id=response.user.id, email=response.user.email)
         token = response.session.access_token
         return user, token
-        
+
     def validate_token(self, token: str) -> User:
         """Validate access token and return authenticated user"""
-
         try:
-            print(token)
             response = supabase.auth.get_user(token)
+        except AuthApiError:
+            raise UnauthorizedError("Invalid or expired token")
 
-            if not response.user:
-                return None
+        if not response.user:
+            raise UnauthorizedError("Invalid or expired token")
 
-            return User(
-                id=response.user.id,
-                email=response.user.email
-            )
+        return User(
+            id=response.user.id,
+            email=response.user.email
+        )
 
-        except Exception:
-            return None
-        
     def get_by_email(self, email: str) -> User:
         """Get user by email from Supabase"""
         try:
@@ -108,11 +112,13 @@ class SupabaseUserRepository(IUserRepository):
                 .single()
                 .execute()
             )
-
-            if not response.data:
+        except APIError as e:
+            if e.code == "PGRST116":
                 return None
+            raise
 
-            user_data = response.data
-            return User(id=user_data["id"], email=user_data["email"])
-        except Exception:
+        if not response.data:
             return None
+
+        user_data = response.data
+        return User(id=user_data["id"], email=user_data["email"])

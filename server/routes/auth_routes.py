@@ -13,21 +13,14 @@ auth_service = AuthService(user_repository)
 @auth_bp.route("/register", methods=["POST"])
 def signup():
     data = request.get_json()
-
     email = data.get("email")
     password = data.get("password")
 
-    # validate
     if not email or not password:
-        return {"status": "error", "message": "Invalid input"}, 400
+        raise ValidationError("Email and password are required")
 
-    try:
-        result = auth_service.signup(email, password)
-        return result, 201
-    except ValueError as e:
-        return {"status": "error", "message": str(e)}, 400
-    except Exception:
-        return {"status": "error", "message": "Something went wrong"}, 500
+    result  = auth_service.signup(email, password)
+    return result, 201
 
 
 @auth_bp.route("/login", methods=["POST"])
