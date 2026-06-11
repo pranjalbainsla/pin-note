@@ -1,7 +1,7 @@
 from flask import request, Blueprint, g
 from services.pins_service import PinsService
 from repositories.pins_repository import SupabasePinsRepository
-
+from exceptions import ValidationError
 
 pins_bp = Blueprint("/api/pins", __name__)
 
@@ -9,48 +9,31 @@ pins_bp = Blueprint("/api/pins", __name__)
 pin_repository = SupabasePinsRepository()
 pins_service = PinsService(pin_repository)
 
+
 @pins_bp.route("/getAll", methods=["GET"])
 def get_pins():
+    pins = pins_service.get_pins_by_user_id(g.user.id)
+    return {
+        "status": "ok",
+        "pins": [pin.to_dict() for pin in pins],
+    }, 200
 
-    try:
-        user_id = g.user.id
-
-        pins = pins_service.get_pins_by_user_id(user_id)
-
-        return {
-            "status": "ok",
-            "pins": [pin.to_dict() for pin in pins]
-        }, 200
-
-    except Exception as e:
-        print(e)
-        return {"message": str(e)}, 500
 
 @pins_bp.route("/create", methods=["POST"])
 def create_pin():
+    data = request.get_json()
 
-    try:
-        user_id = g.user.id
+    url = data.get("url")
 
-        data = request.get_json()
+    if not url:
+        raise ValidationError("URL is required")
 
-        url = data.get("url")
-        #source_type = data.get("source_type")
-        # add support for other source types in the future
+    pin = pins_service.create_pin(
+        user_id=g.user.id,
+        url=url,
+    )
 
-        if not url:
-            return {"message": "Missing URL"}, 400
-
-        pin = pins_service.create_pin(
-            user_id=user_id,
-            url=url
-        )
-
-        return {
-            "status": "ok",
-            "pin": pin.to_dict()
-        }, 201
-
-    except Exception as e:
-        print(e)
-        return {"message": str(e)}, 500
+    return {
+        "status": "ok",
+        "pin": pin.to_dict(),
+    }, 201

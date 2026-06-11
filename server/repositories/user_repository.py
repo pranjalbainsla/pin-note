@@ -106,8 +106,8 @@ class SupabaseUserRepository(IUserRepository):
         try:
             response = (
                 supabase
-                .table("users")
-                .select("*")
+                .table("profiles")
+                .select("id, email")
                 .eq("email", email)
                 .single()
                 .execute()

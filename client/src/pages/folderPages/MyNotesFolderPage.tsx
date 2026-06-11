@@ -1,14 +1,19 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText } from "lucide-react";
+import { FileText, X } from "lucide-react";
 import { getNotes } from "../../services/notesService";
 import type { Note } from "../../types";
 import { useQuery } from "@tanstack/react-query";
 
-
-export default function MyNotesFolderPage({ setShowMyNotes }: { setShowMyNotes: (show: boolean) => void }) {
+export default function MyNotesFolderPage({
+  setShowMyNotes,
+}: {
+  setShowMyNotes: (show: boolean) => void;
+}) {
   const navigate = useNavigate();
-  const { data, error, isLoading } = useQuery({ queryKey: ['notes'], queryFn: getNotes });
+  const { data, error, isLoading } = useQuery({
+    queryKey: ["notes"],
+    queryFn: getNotes,
+  });
 
   const stripHTML = (html: string) => {
     const div = document.createElement("div");
@@ -17,41 +22,48 @@ export default function MyNotesFolderPage({ setShowMyNotes }: { setShowMyNotes: 
   };
 
   return (
-    <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[900px] min-h-[600px] bg-white rounded-3xl shadow-2xl border border-neutral-200 overflow-hidden">
-      {isLoading && <div>Loading...</div>}
-      {error && <div>{error instanceof Error ? error.message : "An error occurred"}</div>}
-      {/* mac window top bar */}
-      <div className="flex items-center gap-2 px-5 py-3 border-b border-neutral-100 bg-neutral-50">
-        <div className="w-3 h-3 rounded-full bg-red-400">
-            <button onClick={() => setShowMyNotes(false)} className="w-full h-full rounded-full opacity-0 hover:opacity-100 transition" />
+    <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[900px] min-h-[600px] bg-white/90 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] border border-[#E8E6E1] overflow-hidden backdrop-blur-md popup-animate-in font-[family-name:var(--font-ui)]">
+      {isLoading && (
+        <div className="p-8 text-[#4A4A4A]">Loading...</div>
+      )}
+      {error && (
+        <div className="p-8 text-red-500">
+          {error instanceof Error ? error.message : "An error occurred"}
         </div>
-        <div className="w-3 h-3 rounded-full bg-yellow-400" />
-        <div className="w-3 h-3 rounded-full bg-green-400" />
+      )}
 
+      <div className="flex items-center justify-between px-5 py-4 border-b border-[#E8E6E1]">
+        <h2 className="text-sm font-medium text-[#2D2D2D]">My Notes</h2>
+        <button
+          onClick={() => setShowMyNotes(false)}
+          className="p-1.5 rounded-xl text-[#8A8A8A] hover:text-[#2D2D2D] hover:bg-[#F0EEEA] transition-colors"
+          aria-label="Close"
+        >
+          <X size={18} />
+        </button>
       </div>
 
-      {/* notes grid */}
       <div className="p-8 grid grid-cols-3 gap-6">
 
-        {data?.notes.map((note) => (
+        {data?.notes.map((note: Note) => (
           <div
             key={note.id}
             onClick={() => navigate(`/editor/${note.id}`)}
-            className="group cursor-pointer bg-[#fafafa] hover:bg-white border border-neutral-200 rounded-2xl p-5 shadow-sm hover:shadow-xl transition-all duration-200"
+            className="group cursor-pointer bg-[#FAFAF8] hover:bg-white border border-[#E8E6E1] rounded-2xl p-5 shadow-sm hover:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] transition-all duration-200"
           >
 
             <div className="flex items-center gap-3 mb-4">
               <FileText
                 size={22}
-                className="text-neutral-500 group-hover:scale-105 transition"
+                className="text-[#8A8A8A] group-hover:scale-105 transition"
               />
 
-              <h2 className="font-semibold text-neutral-800 truncate">
+              <h2 className="font-medium text-[#2D2D2D] truncate">
                 {note.title}
               </h2>
             </div>
 
-            <p className="text-sm text-neutral-500 line-clamp-3 leading-6">
+            <p className="text-sm text-[#4A4A4A] line-clamp-3 leading-6 font-[family-name:var(--font-serif)]">
               {stripHTML(note.content)}
             </p>
 

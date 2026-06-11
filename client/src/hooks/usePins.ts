@@ -7,6 +7,12 @@ export interface FloatingPin extends Pin {
   y: number;
   width: number;
   height: number;
+  themeIndex: number;
+}
+
+export interface PopupPosition {
+  x: number;
+  y: number;
 }
 
 const DEFAULT_PIN_POSITION = { x: 100, y: 100, width: 320, height: 220 };
@@ -17,9 +23,10 @@ const DEFAULT_PIN_POSITION = { x: 100, y: 100, width: 320, height: 220 };
  */
 export function usePins() {
   const [showPinsPopup, setShowPinsPopup] = useState(false);
-  const [pins, setPins]                   = useState<Pin[]>([]);
-  const [floatingPins, setFloatingPins]   = useState<FloatingPin[]>([]);
-  const [error, setError]                 = useState("");
+  const [popupPosition, setPopupPosition] = useState<PopupPosition | null>(null);
+  const [pins, setPins] = useState<Pin[]>([]);
+  const [floatingPins, setFloatingPins] = useState<FloatingPin[]>([]);
+  const [error, setError] = useState("");
 
   const fetchPins = useCallback(async () => {
     try {
@@ -34,20 +41,58 @@ export function usePins() {
     }
   }, []);
 
-  const openPinsPopup = useCallback(() => {
-    setShowPinsPopup(true);
-    fetchPins();
-  }, [fetchPins]);
+  const openPinsPopup = useCallback(
+    (position: PopupPosition) => {
+      setPopupPosition(position);
+      setShowPinsPopup(true);
+      fetchPins();
+    },
+    [fetchPins],
+  );
 
-  const closePinsPopup = useCallback(() => setShowPinsPopup(false), []);
+  const closePinsPopup = useCallback(() => {
+    setShowPinsPopup(false);
+    setPopupPosition(null);
+  }, []);
 
   const insertPin = useCallback((pin: Pin) => {
     setShowPinsPopup(false);
-    setFloatingPins((prev) => [...prev.filter((p) => p.id !== pin.id), { ...pin, ...DEFAULT_PIN_POSITION }]);
+    setPopupPosition(null);
+    setFloatingPins((prev) => {
+      const themeIndex = prev.length;
+      const without = prev.filter((p) => p.id !== pin.id);
+      return [
+        ...without,
+        { ...pin, ...DEFAULT_PIN_POSITION, themeIndex },
+      ];
+    });
   }, []);
-  const removePin = (id: string) => {
-    setFloatingPins((prev) => prev.filter((p) => p.id !== id));
-  };
 
-  return { showPinsPopup, closePinsPopup, pins, floatingPins, error, openPinsPopup, insertPin, removePin };
+  const removePin = useCallback((id: string) => {
+    setFloatingPins((prev) => prev.filter((p) => p.id !== id));
+  }, []);
+
+  const updatePinPosition = useCallback(
+    (id: string, x: number, y: number, width: number, height: number) => {
+      setFloatingPins((prev) =>
+        prev.map((p) =>
+          p.id === id ? { ...p, x, y, width, height } : p,
+        ),
+      );
+    },
+    [],
+  );
+
+  return {
+    showPinsPopup,
+    popupPosition,
+    closePinsPopup,
+    pins,
+    floatingPins,
+    error,
+    openPinsPopup,
+    insertPin,
+    removePin,
+    updatePinPosition,
+  };
 }

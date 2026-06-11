@@ -5,19 +5,27 @@ from utils.supabase_client import supabase
 
 class IPinsRepository(ABC):
     """Repository interface - defines contract for pins data access"""
+
     @abstractmethod
     def get_pins_by_user_id(self, user_id: str) -> list[Pin]:
         """Get all pins for a user."""
         pass
+
     @abstractmethod
-    def create_pin(self, user_id: str, source_type: str, source_url: str, title: str, summary: str) -> Pin:
+    def create_pin(
+        self,
+        user_id: str,
+        source_type: str,
+        source_url: str,
+        title: str,
+        summary: str,
+    ) -> Pin:
         """Create a new pin."""
         pass
-        
-        
-class SupabasePinsRepository(ABC):
-    def get_pins_by_user_id(self, user_id: str) -> list[Pin]:
 
+
+class SupabasePinsRepository(IPinsRepository):
+    def get_pins_by_user_id(self, user_id: str) -> list[Pin]:
         response = (
             supabase.table("pins")
             .select("*")
@@ -25,34 +33,30 @@ class SupabasePinsRepository(ABC):
             .order("created_at", desc=True)
             .execute()
         )
+
         if not response.data:
-            raise Exception("Failed to fetch pins")
-        
-        pins = []
+            return []
 
-        for pin_data in response.data:
-            pins.append(
-                Pin(
-                    id=pin_data["id"],
-                    user_id=pin_data["user_id"],
-                    source_type=pin_data["source_type"],
-                    source_url=pin_data["source_url"],
-                    title=pin_data["title"],
-                    summary=pin_data["summary"]
-                )
+        return [
+            Pin(
+                id=pin_data["id"],
+                user_id=pin_data["user_id"],
+                source_type=pin_data["source_type"],
+                source_url=pin_data["source_url"],
+                title=pin_data["title"],
+                summary=pin_data["summary"],
             )
+            for pin_data in response.data
+        ]
 
-        return pins
-    
     def create_pin(
         self,
         user_id: str,
         source_type: str,
         source_url: str,
         title: str,
-        summary: str
+        summary: str,
     ) -> Pin:
-
         response = (
             supabase.table("pins")
             .insert({
@@ -60,13 +64,11 @@ class SupabasePinsRepository(ABC):
                 "source_type": source_type,
                 "source_url": source_url,
                 "title": title,
-                "summary": summary
+                "summary": summary,
             })
             .execute()
         )
-        if not response.data:
-            raise Exception("Failed to create pin")
-        
+        # TODO: add custom errors for database errors
         pin_data = response.data[0]
 
         return Pin(
@@ -75,5 +77,5 @@ class SupabasePinsRepository(ABC):
             source_type=pin_data["source_type"],
             source_url=pin_data["source_url"],
             title=pin_data["title"],
-            summary=pin_data["summary"]
+            summary=pin_data["summary"],
         )

@@ -1,9 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
+  --font-ui: "Inter", system-ui, sans-serif;
+  --font-serif: "Newsreader", Georgia, serif;
+  --color-heading: #2d2d2d;
+  --color-body: #4a4a4a;
+  --color-bg: #f7f7f5;
+  --text: #4a4a4a;
+  --text-h: #2d2d2d;
+  --bg: #f7f7f5;
   --border: #e5e4e7;
   --code-bg: #f4f3ec;
   --accent: #aa3bff;
@@ -118,4 +123,25 @@ code {
 .scrollbar-none {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+.editor-canvas:empty::before {
+  content: attr(data-placeholder);
+  color: #c8c6c0;
+  pointer-events: none;
+}
+
+@keyframes popup-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.popup-animate-in {
+  animation: popup-in 0.2s ease-out;
 }

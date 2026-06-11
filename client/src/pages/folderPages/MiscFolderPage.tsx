@@ -1,56 +1,56 @@
 import { useState } from "react";
-import { Folder, Link2, Loader2 } from "lucide-react";
+import { Folder, Link2, Loader2, X } from "lucide-react";
 import { createPin } from "../../services/pinsService";
 
-export default function MiscFolderPage({ setShowMiscFolder }: { setShowMiscFolder: (show: boolean) => void }) {
-
+export default function MiscFolderPage({
+  setShowMiscFolder,
+}: {
+  setShowMiscFolder: (show: boolean) => void;
+}) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  const handleDrop = async (
-        e: React.DragEvent<HTMLDivElement>
-    ) => {
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
 
-        e.preventDefault();
+    setIsDragging(false);
 
-        setIsDragging(false);
+    const droppedText = e.dataTransfer.getData("text/plain");
 
-        const droppedText =
-        e.dataTransfer.getData("text/plain");
+    if (
+      !droppedText.includes("youtube.com") &&
+      !droppedText.includes("youtu.be")
+    ) {
+      return;
+    }
 
-        if (!droppedText.includes("youtube.com") &&
-            !droppedText.includes("youtu.be")) {
-        return;
-        }
+    try {
+      setIsUploading(true);
 
-        try {
+      const res = await createPin(droppedText);
 
-        setIsUploading(true);
-
-        const res = await createPin(droppedText);
-        
-        if(res.ok) console.log("Pin created");
-
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setIsUploading(false);
-        }
-    };
+      if (res.ok) console.log("Pin created");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   return (
-    <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[850px] min-h-[550px] bg-white rounded-3xl shadow-2xl border border-neutral-200 overflow-hidden">
+    <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[850px] min-h-[550px] bg-white/90 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] border border-[#E8E6E1] overflow-hidden backdrop-blur-md popup-animate-in font-[family-name:var(--font-ui)]">
 
-      {/* mac top bar */}
-      <div className="flex items-center gap-2 px-5 py-3 border-b border-neutral-100 bg-neutral-50">
-        <div className="w-3 h-3 rounded-full bg-red-400">
-            <button onClick={() => setShowMiscFolder(false)} className="w-full h-full rounded-full opacity-0 hover:opacity-100 transition" />
-        </div>
-        <div className="w-3 h-3 rounded-full bg-yellow-400" />
-        <div className="w-3 h-3 rounded-full bg-green-400" />
+      <div className="flex items-center justify-between px-5 py-4 border-b border-[#E8E6E1]">
+        <h2 className="text-sm font-medium text-[#2D2D2D]">Misc</h2>
+        <button
+          onClick={() => setShowMiscFolder(false)}
+          className="p-1.5 rounded-xl text-[#8A8A8A] hover:text-[#2D2D2D] hover:bg-[#F0EEEA] transition-colors"
+          aria-label="Close"
+        >
+          <X size={18} />
+        </button>
       </div>
 
-      {/* content */}
       <div className="p-10">
 
         <div
@@ -64,7 +64,7 @@ export default function MiscFolderPage({ setShowMiscFolder }: { setShowMiscFolde
           onDrop={handleDrop}
           className={`
             h-[350px]
-            rounded-3xl
+            rounded-2xl
             border-2
             border-dashed
             transition-all
@@ -76,8 +76,8 @@ export default function MiscFolderPage({ setShowMiscFolder }: { setShowMiscFolde
 
             ${
               isDragging
-                ? "border-blue-500 bg-blue-50"
-                : "border-neutral-300 bg-neutral-50"
+                ? "border-[#A8B8A8] bg-[#E8EDE8]/60"
+                : "border-[#D8D6D0] bg-[#FAFAF8]"
             }
           `}
         >
@@ -86,10 +86,10 @@ export default function MiscFolderPage({ setShowMiscFolder }: { setShowMiscFolde
             <>
               <Loader2
                 size={52}
-                className="animate-spin text-neutral-500"
+                className="animate-spin text-[#8A8A8A]"
               />
 
-              <p className="text-neutral-500 text-lg">
+              <p className="text-[#4A4A4A] text-lg">
                 Summarizing video...
               </p>
             </>
@@ -101,19 +101,19 @@ export default function MiscFolderPage({ setShowMiscFolder }: { setShowMiscFolde
                   transition-all
                   ${
                     isDragging
-                      ? "text-blue-500 scale-105"
-                      : "text-neutral-500"
+                      ? "text-[#8A9A8A] scale-105"
+                      : "text-[#8A8A8A]"
                   }
                 `}
               />
 
               <div className="text-center">
 
-                <p className="text-xl font-semibold mb-2">
+                <p className="text-xl font-medium text-[#2D2D2D] mb-2">
                   Drop YouTube Link Here
                 </p>
 
-                <p className="text-neutral-500">
+                <p className="text-[#4A4A4A]">
                   Drag a YouTube URL from your browser
                 </p>
 
@@ -121,7 +121,7 @@ export default function MiscFolderPage({ setShowMiscFolder }: { setShowMiscFolde
 
               <Link2
                 size={24}
-                className="text-neutral-400"
+                className="text-[#B0B0B0]"
               />
             </>
           )}
