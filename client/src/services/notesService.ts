@@ -1,74 +1,37 @@
-import { API_BASE_URL } from "../config";
+import { apiFetch } from "./apiFetch";
+import type { Note } from "../types";
 
-function getToken(): string {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    throw new Error("No auth token found");
-  }
-  return token;
-}
+type NotesResponse = {
+  status: "ok";
+  notes: Note[];
+};
+
+type NoteResponse = {
+  status: "ok";
+  note: Note;
+};
+
+type UpdateNoteResponse = {
+  status: "ok";
+};
 
 export async function getNotes() {
-  const token = getToken();
-  const res = await fetch(`${API_BASE_URL}/notes/getAll`, {
-    headers: {
-        Authorization: `Bearer ${token}`,
-    }
-  });
-  if (!res.ok) {
-    if (res.status === 401) {
-        localStorage.removeItem("token");
-        window.location.href = "/";
-        return;
-    }
-    const data = await res.json();
-    throw new Error(data.message || "Failed to fetch notes");
-  }
-  return res.json();
+  return apiFetch<NotesResponse>("/notes/getAll", {}, "Failed to fetch notes");
 }
 
 export async function getNoteById(noteId: string) {
-  const token = getToken();
-  const res = await fetch(`${API_BASE_URL}/notes/get/${noteId}`, {
-    headers: {
-        Authorization: `Bearer ${token}`,
-    }
-  });
-  if (!res.ok) {
-    if (res.status === 401) {
-        localStorage.removeItem("token");
-        window.location.href = "/";
-        return;
-    }
-    const data = await res.json();
-    throw new Error(data.message || "Failed to fetch note");
-  }
-  return res.json();
+  return apiFetch<NoteResponse>(`/notes/get/${noteId}`, {}, "Failed to fetch note");
 }
 
 
 export async function createNote(title: string = "", content: string = "") {
-  const token = getToken();
-  const res = await fetch(`${API_BASE_URL}/notes/create`, {
+  return apiFetch<NoteResponse>("/notes/create", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({ title, content }),
-  });
-
-  if (!res.ok) {
-    if (res.status === 401) {
-      localStorage.removeItem("token");
-      window.location.href = "/";
-      return;
-    }
-    const data = await res.json();
-    throw new Error(data.message || "Failed to create note");
-  }
-
-  return res.json();
+  }, "Failed to create note");
 }
 
 
@@ -77,25 +40,11 @@ export async function updateNote(
   title: string,
   content: string
 ) {
-  const token = getToken();
-  const res = await fetch(`${API_BASE_URL}/notes/update/${noteId}`, {
+  return apiFetch<UpdateNoteResponse>(`/notes/update/${noteId}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({ title, content }),
-  });
-
-  if (!res.ok) {
-    if (res.status === 401) {
-      localStorage.removeItem("token");
-      window.location.href = "/";
-      return;
-    }
-    const data = await res.json();
-    throw new Error(data.message || "Failed to update note");
-  }
-
-  return res.json();
+  }, "Failed to update note");
 }

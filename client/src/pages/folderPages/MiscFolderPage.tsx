@@ -29,7 +29,7 @@ export default function MiscFolderPage({
 
       const res = await createPin(droppedText);
 
-      if (res.ok) console.log("Pin created");
+      if (res.status === "ok") console.log("Pin created");
     } catch (err) {
       console.error(err);
     } finally {

@@ -1,50 +1,26 @@
-import { API_BASE_URL } from "../config";
+import { apiFetch } from "./apiFetch";
+import type { Pin } from "../types";
 
-function getToken(): string {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    throw new Error("No auth token found");
-  }
-  return token;
-}
+type PinsResponse = {
+  status: "ok";
+  pins: Pin[];
+};
+
+type PinResponse = {
+  status: "ok";
+  pin: Pin;
+};
 
 export async function getPins() {
-  const token = getToken();
-  const res = await fetch(`${API_BASE_URL}/pins/getAll`, {
-    headers: {
-        Authorization: `Bearer ${token}`,
-    }
-  });
-  if (!res.ok) {
-    if (res.status === 401) {
-        localStorage.removeItem("token");
-        window.location.href = "/";
-        return;
-    }
-    const data = await res.json();
-    throw new Error(data.message || "Failed to fetch pins");
-  }
-  return res.json();
+  return apiFetch<PinsResponse>("/pins/getAll", {}, "Failed to fetch pins");
 }
 
 export async function createPin(url: string) {
-  const token = getToken();
-  const res = await fetch(`${API_BASE_URL}/pins/create`, {
+  return apiFetch<PinResponse>("/pins/create", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({ url }),
-  });
-  if (!res.ok) {
-    if (res.status === 401) {
-        localStorage.removeItem("token");
-        window.location.href = "/";
-        return;
-    }
-    const data = await res.json();
-    throw new Error(data.message || "Failed to create pin");
-  }
-  return res.json();
+  }, "Failed to create pin");
 }
