@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FileText, Folder, Pin, Plus, X } from "lucide-react";
+import { FileText, Folder, Pin, Plus } from "lucide-react";
+import FolderPanel from "@/components/home/FolderPanel";
 import { createNote } from "@/services/notesService";
-import { AddPinPage, MyNotesPage, MyPinsPage } from "@/pages/homePages";
+import AddPinPage from "./AddPinPage";
+import MyNotesPage from "./MyNotesPage";
+import MyPinsPage from "./MyPinsPage";
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -60,67 +63,58 @@ export default function HomePage() {
             onClick={() => setShowFolders(false)}
           />
 
-          <div className="absolute top-24 w-[560px] rounded-2xl bg-white/90 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] border border-[#E8E6E1] overflow-hidden backdrop-blur-md popup-animate-in">
+          <FolderPanel
+            title="Folders"
+            onClose={() => setShowFolders(false)}
+            className="top-24 w-[560px]"
+            bodyClassName="grid grid-cols-3 gap-8 p-8"
+          >
 
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#E8E6E1]">
-              <h2 className="text-sm font-medium text-[#2D2D2D]">Folders</h2>
-              <button
-                onClick={() => setShowFolders(false)}
-                className="p-1.5 rounded-xl text-[#8A8A8A] hover:text-[#2D2D2D] hover:bg-[#F0EEEA] transition-colors"
-                aria-label="Close"
-              >
-                <X size={18} />
-              </button>
+            <div
+              onClick={() => setShowMyNotes(true)}
+              className="flex flex-col items-center cursor-pointer group"
+            >
+              <FileText
+                size={72}
+                className="text-[#8A9A8A] group-hover:scale-105 transition"
+              />
+
+              <span className="mt-3 text-sm font-medium text-[#4A4A4A]">
+                My Notes
+              </span>
             </div>
 
-            <div className="grid grid-cols-3 gap-8 p-8">
-
-              <div
-                onClick={() => setShowMyNotes(true)}
-                className="flex flex-col items-center cursor-pointer group"
-              >
-                <FileText
-                  size={72}
-                  className="text-[#8A9A8A] group-hover:scale-105 transition"
-                />
-
-                <span className="mt-3 text-sm font-medium text-[#4A4A4A]">
-                  My Notes
-                </span>
-              </div>
-
-              <div
-                onClick={() => setShowMyPins(true)}
-                className="flex flex-col items-center cursor-pointer group"
-              >
-                <Pin
-                  size={72}
-                  className="text-[#8EA3B0] group-hover:scale-105 transition"
-                />
-                <span className="mt-3 text-sm font-medium text-[#4A4A4A]">
-                  My Pins
-                </span>
-              </div>
-
-              <div
-                onClick={() => setShowAddPin(true)}
-                className="relative flex flex-col items-center cursor-pointer group"
-              >
-                <Folder
-                  size={72}
-                  className="text-[#B0A090] group-hover:scale-105 transition"
-                />
-                <Plus
-                  size={26}
-                  className="absolute mt-11 ml-12 text-[#6A6A6A] bg-white rounded-full"
-                />
-                <span className="mt-3 text-sm font-medium text-[#4A4A4A]">
-                  Add Pin
-                </span>
-              </div>
-
+            <div
+              onClick={() => setShowMyPins(true)}
+              className="flex flex-col items-center cursor-pointer group"
+            >
+              <Pin
+                size={72}
+                className="text-[#8EA3B0] group-hover:scale-105 transition"
+              />
+              <span className="mt-3 text-sm font-medium text-[#4A4A4A]">
+                My Pins
+              </span>
             </div>
-          </div>
+
+            <div
+              onClick={() => setShowAddPin(true)}
+              className="relative flex flex-col items-center cursor-pointer group"
+            >
+              <Folder
+                size={72}
+                className="text-[#B0A090] group-hover:scale-105 transition"
+              />
+              <Plus
+                size={26}
+                className="absolute mt-11 ml-12 text-[#6A6A6A] bg-white rounded-full"
+              />
+              <span className="mt-3 text-sm font-medium text-[#4A4A4A]">
+                Add Pin
+              </span>
+            </div>
+
+          </FolderPanel>
         </>
       )}
       {showMyNotes && <MyNotesPage setShowMyNotes={setShowMyNotes} />}

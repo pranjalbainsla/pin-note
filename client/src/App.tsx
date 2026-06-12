@@ -1,15 +1,15 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
-import ProtectedRoute from "./components/ProtectedRoute";
+import { AuthProvider } from "@/context/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import { ErrorBoundary } from "react-error-boundary";
 
 import {
   LoginPage,
   RegisterPage,
-} from "./pages/authPages";
-import { HomePage } from "./pages/homePages";
-import Editor from "./pages/notesPages/Editor";
-import ErrorFallback from "./components/errors/ErrorFallback";
+} from "@/pages/authPages";
+import { HomePage } from "@/pages/homePages";
+import Editor from "@/pages/notesPages/Editor";
+import ErrorFallback from "@/components/errors/ErrorFallback";
 
 function App() {
   return (

@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
-import { getNoteById, updateNote } from "../services/notesService";
-import getCleanHTML from "../utils/getCleanHTML";
+import { getNoteById, updateNote } from "@/services/notesService";
+import getCleanHTML from "@/utils/getCleanHTML";
 
 interface UseNoteReturn {
   title: string;

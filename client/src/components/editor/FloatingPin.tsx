@@ -1,7 +1,7 @@
 import { X } from "lucide-react";
 import { Rnd } from "react-rnd";
-import type { FloatingPin as FloatingPinType } from "../../hooks/usePins";
-import { getPinTheme } from "../../constants/theme";
+import type { FloatingPin as FloatingPinType } from "@/hooks/usePins";
+import { getPinTheme } from "@/constants/theme";
 
 interface FloatingPinProps {
   pin: FloatingPinType;

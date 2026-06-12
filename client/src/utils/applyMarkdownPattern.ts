@@ -1,4 +1,4 @@
-import { MARKDOWN_PATTERNS, ZERO_WIDTH_SPACE } from "../constants/editor";
+import { MARKDOWN_PATTERNS, ZERO_WIDTH_SPACE } from "@/constants/editor";
 
 /**
  * Pure function (no React state) — safe to unit test in isolation.

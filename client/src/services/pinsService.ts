@@ -1,5 +1,5 @@
 import { apiFetch } from "./apiFetch";
-import type { Pin } from "../types";
+import type { Pin } from "@/types";
 
 type PinsResponse = {
   status: "ok";

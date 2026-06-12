@@ -1,5 +1,5 @@
 import { apiFetch } from "./apiFetch";
-import type { Note } from "../types";
+import type { Note } from "@/types";
 
 type NotesResponse = {
   status: "ok";

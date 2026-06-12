@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import type { Pin } from "../../types";
-import type { PopupPosition } from "../../hooks/usePins";
+import type { Pin } from "@/types";
+import type { PopupPosition } from "@/hooks/usePins";
 
 interface PinsPopupProps {
   pins: Pin[];

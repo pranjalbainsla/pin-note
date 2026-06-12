@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import { useNote } from "../../hooks/useNote";
-import { useAutoSave } from "../../hooks/useAutoSave";
-import { usePins } from "../../hooks/usePins";
-import { applyMarkdownPattern } from "../../utils/applyMarkdownPattern";
-import { AUTOSAVE_DELAY_MS } from "../../constants/editor";
-import EditorToolbar from "../../components/editor/EditorToolbar";
-import EditorContent from "../../components/editor/EditorContent";
-import PinsPopup from "../../components/editor/PinsPopup";
-import FloatingPin from "../../components/editor/FloatingPin";
+import { useAuth } from "@/context/AuthContext";
+import { useNote } from "@/hooks/useNote";
+import { useAutoSave } from "@/hooks/useAutoSave";
+import { usePins } from "@/hooks/usePins";
+import { applyMarkdownPattern } from "@/utils/applyMarkdownPattern";
+import { AUTOSAVE_DELAY_MS } from "@/constants/editor";
+import EditorToolbar from "@/components/editor/EditorToolbar";
+import EditorContent from "@/components/editor/EditorContent";
+import PinsPopup from "@/components/editor/PinsPopup";
+import FloatingPin from "@/components/editor/FloatingPin";
 
 const TYPING_IDLE_MS = 1500;
 const TOP_HOVER_ZONE_RATIO = 0.15;

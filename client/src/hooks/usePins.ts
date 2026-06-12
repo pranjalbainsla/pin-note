@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
-import { getPins } from "../services/pinsService";
-import type { Pin } from "../types";
+import { getPins } from "@/services/pinsService";
+import type { Pin } from "@/types";
 
 export interface FloatingPin extends Pin {
   x: number;
