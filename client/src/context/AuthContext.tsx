@@ -5,9 +5,23 @@ import { API_BASE_URL } from "../config";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function getStoredUser(): User | null {
+  const storedUser = localStorage.getItem("user");
+  if (!storedUser) return null;
+
+  try {
+    return JSON.parse(storedUser);
+  } catch {
+    localStorage.removeItem("user");
+    return null;
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(getStoredUser);
+  const [token, setToken] = useState<string | null>(() =>
+    localStorage.getItem("token"),
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,26 +45,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message ||"Login failed");
+        throw new Error(data.message || "Login failed");
       }
 
       setUser(data.user);
       setToken(data.token);
 
       localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
 
- } catch (err) {
-    console.error("Authentication error:", err);
+    } catch (err) {
+      console.error("Authentication error:", err);
 
-    const message =
-      err.message || // backend message
-      "Unable to connect to the server. Please try again later.";
+      const message =
+        err instanceof Error && err.message
+          ? err.message
+          : "Unable to connect to the server. Please try again later.";
 
-    setError(message);
-    throw err;
-  } finally {
-    setIsLoading(false);
-  }
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const login = (email: string, password: string) => {
@@ -60,13 +76,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = (email: string, password: string) => {
     return authenticate("register", email, password);
   };
-  
+
   const logout = () => {
     setUser(null);
     setToken(null);
     setError(null);
 
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
   };
 
   return (
@@ -79,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         logout,
-        isAuthenticated: !!user && !!token,
+        isAuthenticated: !!token,
       }}
     >
       {children}
