@@ -4,7 +4,7 @@ import { getNotes } from "../../services/notesService";
 import type { Note } from "../../types";
 import { useQuery } from "@tanstack/react-query";
 
-export default function MyNotesFolderPage({
+export default function MyNotesPage({
   setShowMyNotes,
 }: {
   setShowMyNotes: (show: boolean) => void;

@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Folder, Link2, Loader2, X } from "lucide-react";
+import { Link2, Loader2, UploadCloud, X } from "lucide-react";
 import { createPin } from "../../services/pinsService";
 
-export default function MiscFolderPage({
-  setShowMiscFolder,
+export default function AddPinPage({
+  setShowAddPin,
 }: {
-  setShowMiscFolder: (show: boolean) => void;
+  setShowAddPin: (show: boolean) => void;
 }) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -41,9 +41,9 @@ export default function MiscFolderPage({
     <div className="absolute top-20 left-1/2 -translate-x-1/2 w-[850px] min-h-[550px] bg-white/90 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] border border-[#E8E6E1] overflow-hidden backdrop-blur-md popup-animate-in font-[family-name:var(--font-ui)]">
 
       <div className="flex items-center justify-between px-5 py-4 border-b border-[#E8E6E1]">
-        <h2 className="text-sm font-medium text-[#2D2D2D]">Misc</h2>
+        <h2 className="text-sm font-medium text-[#2D2D2D]">Add Pin</h2>
         <button
-          onClick={() => setShowMiscFolder(false)}
+          onClick={() => setShowAddPin(false)}
           className="p-1.5 rounded-xl text-[#8A8A8A] hover:text-[#2D2D2D] hover:bg-[#F0EEEA] transition-colors"
           aria-label="Close"
         >
@@ -95,7 +95,7 @@ export default function MiscFolderPage({
             </>
           ) : (
             <>
-              <Folder
+              <UploadCloud
                 size={72}
                 className={`
                   transition-all

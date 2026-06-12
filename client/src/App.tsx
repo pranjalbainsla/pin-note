@@ -7,7 +7,7 @@ import {
   LoginPage,
   RegisterPage,
 } from "./pages/authPages";
-import HomePage from "./pages/HomePage";
+import { HomePage } from "./pages/homePages";
 import Editor from "./pages/notesPages/Editor";
 import ErrorFallback from "./components/errors/ErrorFallback";
 

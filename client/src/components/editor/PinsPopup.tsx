@@ -49,7 +49,7 @@ export default function PinsPopup({
         <div className="overflow-y-auto max-h-[280px] scrollbar-none py-1">
           {pins.length === 0 ? (
             <p className="px-4 py-6 text-sm text-[#8A8A8A] text-center font-[family-name:var(--font-ui)]">
-              No pins yet — drop a YouTube link in Misc folder
+              No pins yet — add a YouTube link from Add Pin
             </p>
           ) : (
             pins.map((pin) => (
