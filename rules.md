@@ -55,3 +55,9 @@ codebase", "generate full documentation").
 - Extend existing patterns instead of introducing new abstractions.
 - If an existing pattern genuinely doesn't fit, propose the new abstraction
   explicitly rather than silently deviating.
+
+## Documentation
+- When a change affects architecture, API surface, folder structure, or a
+  documented decision, update the relevant doc in the same task — small,
+  targeted edits only (don't regenerate whole files).
+- If unsure whether a change is doc-worthy, ask rather than skipping silently.
