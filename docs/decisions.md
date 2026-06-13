@@ -1,4 +1,4 @@
-# Architectural decisions
+# Architectural decisions (initial manual review done)
 
 This document records architectural choices **inferred from the current codebase**. Where evidence is indirect, sections are marked as inferences. No commit history or design docs were available to verify intent.
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Better is a client–server application. The React frontend talks to a Flask REST API, which owns all business logic and database access. External services (Supabase, Gemini, YouTube) are called only from the server layer.
+pin-note is a client–server application. The React frontend talks to a Flask REST API, which owns all business logic and database access. External services (Supabase, Gemini, YouTube) are called only from the server layer.
 
 ```mermaid
 flowchart TB

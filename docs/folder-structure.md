@@ -3,7 +3,7 @@
 This document explains the purpose of each major directory. It focuses on intent rather than listing every file.
 
 ```
-better/
+pin-note/
 ├── client/          React frontend
 ├── server/          Flask API
 ├── docs/            Project documentation

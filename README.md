@@ -1,10 +1,10 @@
-# Better
+# pin-note
 
 A full-stack notes app with AI-powered **Pins** — save YouTube videos as summarized cards and drop them into your notes while you write.
 
 ## Overview
 
-Better combines a rich text note editor with a pin system for capturing video content. Users authenticate with email/password, create and edit notes with auto-save, and can drag YouTube links into the app to generate AI summaries. Those summaries become **pins** that can be inserted into the editor as floating, draggable cards.
+pin-note combines a rich text note editor with a pin system for capturing video content. Users authenticate with email/password, create and edit notes with auto-save, and can drag YouTube links into the app to generate AI summaries. Those summaries become **pins** that can be inserted into the editor as floating, draggable cards.
 
 The project is a monorepo with two packages:
 
