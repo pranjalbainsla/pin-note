@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { FileText, Folder, Pin, Plus } from "lucide-react";
 import FolderPanel from "@/components/home/FolderPanel";
 import { createNote } from "@/services/notesService";
 import AddPinPage from "./AddPinPage";
 import MyNotesPage from "./MyNotesPage";
 import MyPinsPage from "./MyPinsPage";
+import { useAuth } from "@/context/AuthContext";
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ export default function HomePage() {
   const [showMyPins, setShowMyPins] = useState(false);
   const [showAddPin, setShowAddPin] = useState(false);
   const [creating, setCreating] = useState(false);
+  const { logout } = useAuth();
 
   const handleCreateNote = async () => {
     try {
@@ -48,12 +50,12 @@ export default function HomePage() {
         >
           View Folders
         </button>
-        <Link
-          to="/"
-          className="text-sm text-[#4A4A4A] hover:text-[#2D2D2D] transition text-center"
+        <button
+          onClick={logout}
+          className="text-sm text-[#4A4A4A] hover:text-[#2D2D2D] transition text-center cursor-pointer"
         >
           Logout
-        </Link>
+        </button>
       </div>
 
       {showFolders && (

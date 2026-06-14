@@ -1,6 +1,8 @@
 # pin-note
 `this is essentially a zenpen (for writing) + pinterest (for saving (tech) content you like from yt, X, medium etc) combo`
+
 A full-stack notes app with AI-powered **Pins** — save YouTube videos as summarized cards and drop them into your notes while you write.
+
 `note to self: chill out, you can add personality to the README later`
 
 ## Overview
