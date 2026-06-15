@@ -25,7 +25,7 @@ export default function FloatingPin({
   return (
     <Rnd
       default={{ x: pin.x, y: pin.y, width: pin.width, height: pin.height }}
-      bounds="window"
+      bounds="parent"
       minWidth={250}
       minHeight={150}
       dragHandleClassName="pin-drag-handle"

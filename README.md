@@ -1,5 +1,6 @@
 # pin-note
-`this is essentially a zenpen (for writing) + pinterest (for saving (tech) content you like from yt, X, medium etc) combo`
+
+`this is essentially a zenpen (for writing) + pinterest (for saving content you like from yt, X, medium etc) combo`
 
 A full-stack notes app with AI-powered **Pins** — save YouTube videos as summarized cards and drop them into your notes while you write.
 
@@ -11,23 +12,27 @@ pin-note combines a rich text note editor with a pin system for capturing conten
 
 The project is a monorepo with two packages:
 
-| Package | Role |
-|---------|------|
+
+| Package   | Role                          |
+| --------- | ----------------------------- |
 | `client/` | React SPA (Vite + TypeScript) |
-| `server/` | Flask REST API (Python) |
+| `server/` | Flask REST API (Python)       |
+
 
 Data and authentication are backed by **Supabase**. Video summarization uses **Google Gemini** and the **YouTube Transcript API**.
 
 ## Tech stack
 
 **Frontend**
+
 - React 19, TypeScript, Vite
 - React Router, TanStack Query
 - Tailwind CSS 4
-- contentEditable editor with markdown shortcuts (`**bold**`, `*italic*`, `` `code` ``)
+- contentEditable editor with markdown shortcuts (`**bold`**, `*italic*`, ``code``)
 - react-rnd for draggable pin cards
 
 **Backend**
+
 - Flask 3 with flask-cors
 - Layered architecture: routes → services → repositories
 - Supabase (auth + Postgres via PostgREST)
@@ -115,6 +120,7 @@ Pin creation additionally calls:
 Protected routes require an `Authorization: Bearer <token>` header. Tokens are issued at login/register and stored in `localStorage` on the client.
 
 For deeper detail, see:
+
 - [docs/architecture.md](docs/architecture.md) — modules, data flow, patterns
 - [docs/folder-structure.md](docs/folder-structure.md) — directory guide
 - [docs/api.md](docs/api.md) — endpoint reference
@@ -123,20 +129,24 @@ For deeper detail, see:
 ## Key features
 
 ### Authentication
+
 Email/password signup and login via Supabase Auth. JWT access tokens are returned to the client and validated on every protected request.
 
 ### Notes
+
 - Create blank notes from the home screen
 - Rich text editor with auto-save (1 s debounce)
 - Inline markdown shortcuts for bold, italic, and code
 - Notes list filtered to non-empty titles, ordered by `updated_at`
 
 ### Pins
+
 - Drag a YouTube URL onto the Add Pin drop zone
 - Server fetches the transcript, summarizes it with Gemini, and stores title + summary
 - Masonry-style pin gallery on the home screen
 
 ### Editor pin insertion
+
 - Type `/` in the editor to open a pin picker
 - Selected pins appear as draggable, resizable floating cards overlaid on the note
 - Pin positions are session-only (not persisted to the server)

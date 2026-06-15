@@ -5,6 +5,7 @@ import { useNote } from "@/hooks/useNote";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { usePins } from "@/hooks/usePins";
 import { applyMarkdownPattern } from "@/utils/applyMarkdownPattern";
+import { combineEditorErrors } from "@/utils/combineEditorErrors";
 import { AUTOSAVE_DELAY_MS } from "@/constants/editor";
 import EditorToolbar from "@/components/editor/EditorToolbar";
 import EditorContent from "@/components/editor/EditorContent";
@@ -21,8 +22,9 @@ export default function Editor() {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const { noteId } = useParams<{ noteId: string }>();
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const { title, setTitle, isLoading, isSaving, error, editorRef, fetchNote, saveNote } =
+  const { title, setTitle, isLoading, isSaving, error: noteError, editorRef, fetchNote, saveNote } =
     useNote(noteId);
   const { scheduleAutoSave } = useAutoSave(saveNote, AUTOSAVE_DELAY_MS);
   const {
@@ -31,11 +33,14 @@ export default function Editor() {
     closePinsPopup,
     pins,
     floatingPins,
+    error: pinsError,
     openPinsPopup,
     insertPin,
     removePin,
     updatePinPosition,
   } = usePins();
+
+  const editorError = combineEditorErrors(noteError, pinsError);
 
   const [isTyping, setIsTyping] = useState(false);
   const [isNearTop, setIsNearTop] = useState(false);
@@ -104,18 +109,21 @@ export default function Editor() {
 
   if (isLoading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-[#F7F7F5] text-[#4A4A4A] font-[family-name:var(--font-ui)]">
+      <div className="flex flex-1 items-center justify-center text-[var(--slate-muted)]">
         Loading...
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-screen bg-[#F7F7F5] px-6 py-10 font-[family-name:var(--font-ui)]">
-      <div className="max-w-3xl mx-auto">
+    <div
+      ref={containerRef}
+      className="relative flex flex-1 min-h-0 overflow-auto px-6 py-10"
+    >
+      <div className="max-w-3xl mx-auto w-full">
         <EditorToolbar
           isSaving={isSaving}
-          error={error}
+          error={editorError}
           showNav={showNav}
           onHome={() => navigate("/home")}
           onLogout={logout}
@@ -127,7 +135,7 @@ export default function Editor() {
           value={title}
           onChange={handleTitleChange}
           disabled={!noteId}
-          className="w-full text-4xl font-semibold tracking-tight text-[#2D2D2D] placeholder:text-[#C8C6C0] outline-none border-none mb-10 disabled:opacity-50 bg-transparent font-[family-name:var(--font-ui)]"
+          className="w-full text-4xl font-semibold tracking-tight text-[var(--slate-surface-text)] placeholder:text-[var(--slate-muted)] outline-none border-none mb-10 disabled:opacity-50 bg-transparent font-[family-name:var(--font-ui)]"
         />
 
         <EditorContent ref={editorRef} isEditable={!!noteId} onInput={handleInput} />
@@ -137,6 +145,7 @@ export default function Editor() {
         <PinsPopup
           pins={pins}
           position={popupPosition}
+          boundsRef={containerRef}
           onClose={closePinsPopup}
           onSelect={insertPin}
         />

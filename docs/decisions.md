@@ -11,6 +11,7 @@ This document records architectural choices **inferred from the current codebase
 **Why it appears to have been chosen:** The codebase consistently follows this split — routes are thin, services hold authorization and orchestration, repositories encapsulate all Supabase calls. `rules.md` explicitly requires repository-only database access.
 
 **Tradeoffs:**
+
 - (+) Clear boundaries; services are testable with mock repositories
 - (+) Swapping Supabase for another provider would touch only repository implementations
 - (−) More files and boilerplate for a small API surface (3 resource groups)
@@ -25,6 +26,7 @@ This document records architectural choices **inferred from the current codebase
 **Why it appears to have been chosen:** Every repository imports a shared `supabase` client. Auth middleware validates JWTs through `supabase.auth.get_user`. User signup/login call Supabase Auth methods directly. No local password hashing or SQL driver exists in the project.
 
 **Tradeoffs:**
+
 - (+) Auth, storage, and Postgres in one managed service
 - (+) JWT validation delegated to Supabase — no custom session store
 - (−) Tight coupling to Supabase SDK and error types (`AuthApiError`, `APIError`)
@@ -41,6 +43,7 @@ This document records architectural choices **inferred from the current codebase
 **Why it appears to have been chosen:** `PinsService.create_pin` orchestrates the full pipeline server-side. The Gemini API key lives in server env (`GEMINI_API_KEY`), never exposed to the client. The client only sends a URL.
 
 **Tradeoffs:**
+
 - (+) API keys stay secret
 - (+) Consistent summarization logic regardless of client
 - (+) Transcript fetch avoids CORS issues
@@ -56,6 +59,7 @@ This document records architectural choices **inferred from the current codebase
 **Why it appears to have been chosen:** `gemini_client.py` is the only AI integration. The prompt requests JSON with `title` and `summary` fields; the `author` field is requested but discarded in the return value.
 
 **Tradeoffs:**
+
 - (+) Fast, cost-effective model for summarization
 - (+) Structured output reduces parsing ambiguity
 - (−) Transcript truncated to 12,000 characters — long videos lose context
@@ -71,6 +75,7 @@ This document records architectural choices **inferred from the current codebase
 **Why it appears to have been chosen:** Each repository file follows the same ABC + implementation pattern. Services type-hint against the interface, not the concrete class.
 
 **Tradeoffs:**
+
 - (+) Documents the data-access contract explicitly
 - (+) Enables unit testing services with fakes
 - (−) Only one implementation exists — the abstraction adds indirection without current benefit
@@ -85,6 +90,7 @@ This document records architectural choices **inferred from the current codebase
 **Why it appears to have been chosen:** `rules.md` mandates global error handlers and discourages unnecessary try/catch. `app.py` registers handlers for `AppError` and a catch-all `Exception`.
 
 **Tradeoffs:**
+
 - (+) Consistent error response format for AppErrors
 - (+) Cleaner route handlers
 - (−) Auth middleware uses inline try/except and returns a different JSON shape (`{ message }` without `status`)
@@ -99,6 +105,7 @@ This document records architectural choices **inferred from the current codebase
 **Why it appears to have been chosen:** `AuthContext` writes to `localStorage` on login/register. `apiFetch` reads the token and sets the header. On 401, both are cleared and the user is redirected to login.
 
 **Tradeoffs:**
+
 - (+) Simple, stateless API — no cookies or server sessions
 - (+) Works with CORS from a separate Vite dev origin
 - (−) localStorage is accessible to XSS — no httpOnly cookie protection
@@ -113,6 +120,7 @@ This document records architectural choices **inferred from the current codebase
 **Why it appears to have been chosen:** `EditorContent` is a plain `contentEditable` div. Formatting is applied by `applyMarkdownPattern` on keystroke. HTML is sanitized with DOMPurify before save. The `@uiw/react-md-editor` package is listed in dependencies but not used in the active editor code.
 
 **Tradeoffs:**
+
 - (+) Lightweight, full control over editing behavior
 - (+) HTML stored directly — no conversion layer
 - (−) contentEditable is notoriously inconsistent across browsers
@@ -130,6 +138,7 @@ This document records architectural choices **inferred from the current codebase
 **Why it appears to have been chosen:** `usePins` manages `floatingPins` in component state. `saveNote` saves only title and HTML content from the editor div. No API endpoint exists for pin placement within notes.
 
 **Tradeoffs:**
+
 - (+) Simple implementation — no schema changes needed
 - (+) Pins can be repositioned freely without save conflicts
 - (−) Pin layout is lost on page refresh
@@ -145,6 +154,7 @@ This document records architectural choices **inferred from the current codebase
 **Why it appears to have been chosen:** `MyNotesPage` and `MyPinsPage` use `useQuery`. The editor uses `useNote` + `useAutoSave` with manual state because it needs a DOM ref, debounced saves, and tight coupling to contentEditable events.
 
 **Tradeoffs:**
+
 - (+) React Query handles caching and loading states for list views
 - (+) Editor hooks encapsulate complex, editor-specific logic
 - (−) Two data-fetching patterns in one app
@@ -154,11 +164,12 @@ This document records architectural choices **inferred from the current codebase
 
 ## CORS locked to local dev origin
 
-**Decision:** Flask CORS allows only `http://localhost:5173` on `/api/*`.
+**Decision:** Flask CORS allows only `http://localhost:5173` on `/api/`*.
 
 **Why it appears to have been chosen:** Hardcoded in `app.py`. Matches Vite's default dev port. `Config.CLIENT_URL` exists in env but is not used for CORS configuration.
 
 **Tradeoffs:**
+
 - (+) Safe default for local development
 - (−) Production deployment requires a code change or env-driven CORS config (not yet implemented)
 - (−) `CLIENT_URL` env var is loaded but unused — possible incomplete setup
@@ -174,6 +185,7 @@ This document records architectural choices **inferred from the current codebase
 **Why it appears to have been chosen:** The repository query includes `.neq("title", "")`. New notes are created with an empty title from the home screen, so blank drafts are hidden from the notes list until the user sets a title.
 
 **Tradeoffs:**
+
 - (+) Notes list shows only "named" notes
 - (−) Users cannot find in-progress untitled notes from My Notes (only via direct URL if they know the ID)
 - (−) Filtering happens in the query, not the UI — behavior may surprise users
@@ -187,7 +199,26 @@ This document records architectural choices **inferred from the current codebase
 **Why it appears to have been chosen:** `Editor.handleInput` detects `/` at the end of the current text node and calls `openPinsPopup` with cursor coordinates.
 
 **Tradeoffs:**
+
 - (+) Familiar pattern (similar to slash commands in Notion, etc.)
 - (+) Non-intrusive — doesn't require toolbar buttons
 - (−) Triggers on any `/` at end of text, including inside words or URLs
 - (−) No search/filter within the popup
+
+---
+
+## App-wide SlateSurface shell with manual theme toggle
+
+**Decision:** Wrap all routes in `AppShell` — a fixed 85vw × 85vh slate centered on a themed background — with a shared `SlateSurface` primitive for both the page shell and modal overlays (`FolderPanel`).
+
+**Why it's chosen:** For a minimal, calm UI where all functionality lives inside a single floating workspace (cream slate on pink in light mode; black slate on off-white in dark mode). A unified shell avoids per-page background/layout duplication and leaves room for future docked/minimized slate behavior. (correction: macos-style docked/minimised behaviour for pins)
+
+**Tradeoffs:**
+
+- (+) Consistent look across auth, home, and editor
+- (+) `SlateSurface` (`page` | `modal`) centralizes surface styling and theme tokens
+- (+) Theme toggle in a fixed right rail is always reachable
+- (−) Pages must fit within the slate bounds — editor popups and floating pins need container-relative positioning
+- (−) Manual theme (`ThemeContext` + `data-theme`) is separate from OS `prefers-color-scheme` vars still present in `index.css`
+- (−) Home/editor hardcoded hex colors are only partially migrated to slate CSS variables
+

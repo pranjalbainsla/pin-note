@@ -1,5 +1,27 @@
 @import "tailwindcss";
 
+[data-theme="light"] {
+  --slate-page-bg: #f3e8e8;
+  --slate-surface: #fafaf8;
+  --slate-surface-text: #2d2d2d;
+  --slate-muted: #8a8a8a;
+  --slate-border: #e8e6e1;
+  --slate-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
+  --slate-width: 85vw;
+  --slate-height: 85vh;
+}
+
+[data-theme="dark"] {
+  --slate-page-bg: #f7f7f5;
+  --slate-surface: #1a1a1a;
+  --slate-surface-text: #f3f4f6;
+  --slate-muted: #9ca3af;
+  --slate-border: #2e2e2e;
+  --slate-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.25);
+  --slate-width: 85vw;
+  --slate-height: 85vh;
+}
+
 :root {
   --font-ui: "Inter", system-ui, sans-serif;
   --font-serif: "Newsreader", Georgia, serif;
@@ -58,11 +80,7 @@
 }
 
 #root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
+  width: 100%;
   min-height: 100svh;
   display: flex;
   flex-direction: column;

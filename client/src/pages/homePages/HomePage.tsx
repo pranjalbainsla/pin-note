@@ -32,27 +32,27 @@ export default function HomePage() {
   };
 
   return (
-    <div className="relative flex flex-col items-center justify-center h-screen bg-[#F7F7F5] overflow-hidden font-[family-name:var(--font-ui)]">
+    <div className="relative flex flex-1 flex-col items-center justify-center min-h-0 overflow-hidden">
 
       <div className="flex flex-col gap-4">
 
         <button
           onClick={handleCreateNote}
           disabled={creating}
-          className="px-6 py-3 bg-[#2D2D2D] text-white rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.12)] hover:scale-[1.02] transition"
+          className="px-6 py-3 bg-[var(--slate-surface-text)] text-[var(--slate-surface)] rounded-2xl shadow-[var(--slate-shadow)] hover:scale-[1.02] transition"
         >
           {creating ? "Creating..." : "Create a note"}
         </button>
 
         <button
           onClick={() => setShowFolders(true)}
-          className="px-6 py-3 bg-white/80 border border-[#E8E6E1] text-[#4A4A4A] rounded-2xl shadow-sm hover:scale-[1.02] transition backdrop-blur-sm"
+          className="px-6 py-3 bg-[var(--slate-surface)]/80 border border-[var(--slate-border)] text-[var(--slate-muted)] rounded-2xl shadow-sm hover:scale-[1.02] transition backdrop-blur-sm"
         >
           View Folders
         </button>
         <button
           onClick={logout}
-          className="text-sm text-[#4A4A4A] hover:text-[#2D2D2D] transition text-center cursor-pointer"
+          className="text-sm text-[var(--slate-muted)] hover:text-[var(--slate-surface-text)] transition text-center cursor-pointer"
         >
           Logout
         </button>

@@ -103,9 +103,50 @@ Plain Python classes (`User`, `Note`, `Pin`) with a `to_dict()` serializer. They
 
 `ProtectedRoute` redirects unauthenticated users to `/`.
 
+All routes render inside `AppShell`, which provides the app-wide layout (themed background, fixed slate, theme toggle). Individual pages own only their inner content.
+
+### App shell and layout
+
+Every page shares a single UI shell: a themed full-viewport background with a centered **slate** (floating card) at **85vw × 85vh**. Route content renders inside the slate main area; a narrow right rail holds the theme toggle.
+
+```mermaid
+flowchart TB
+    subgraph viewport [Full viewport]
+        bg["Background (--slate-page-bg)"]
+        subgraph slate [SlateSurface page variant]
+            main["Main area (Routes / page content)"]
+            rail["Right rail (ThemeToggle)"]
+        end
+    end
+    bg --> slate
+```
+
+| Component | Path | Role |
+|-----------|------|------|
+| `AppShell` | `components/layout/AppShell.tsx` | Full-viewport background + page slate + theme rail; wraps all routes in `App.tsx` |
+| `SlateSurface` | `components/layout/SlateSurface.tsx` | Shared surface primitive — `page` (app shell) or `modal` (overlays) |
+| `ThemeToggle` | `components/layout/ThemeToggle.tsx` | Sun/Moon toggle in the right rail |
+| `ThemeProvider` | `context/ThemeContext.tsx` | `"light"` / `"dark"` state, `localStorage` persistence, sets `data-theme` on `<html>` |
+
+**Theme tokens** (`client/src/index.css`, under `[data-theme="light"]` / `[data-theme="dark"]`):
+
+| Token | Light | Dark |
+|-------|-------|------|
+| `--slate-page-bg` | Soft pink background | Off-white background |
+| `--slate-surface` | Cream slate | Black slate |
+| `--slate-surface-text` | Dark text | Light text |
+| `--slate-width` / `--slate-height` | 85vw / 85vh | 85vw / 85vh |
+
+Theme is user-controlled via the toggle, separate from the OS `prefers-color-scheme` vars used elsewhere in `index.css`. An inline script in `index.html` reads `localStorage` before React hydrates to avoid a flash of the wrong theme.
+
+**Modal overlays:** `FolderPanel` uses `SlateSurface` variant `modal` for in-slate overlays (folders, notes list, pins gallery, add pin). Home sub-views position these absolutely within the page's relative container.
+
+**Editor constraints:** Floating pins use `react-rnd` with `bounds="parent"` so they stay inside the slate. The pin picker popup (`PinsPopup`) positions relative to the editor container, not the viewport.
+
 ### State and data fetching
 
 - **Auth** — `AuthContext` holds `user`, `token`, and auth methods; persists to `localStorage`.
+- **Theme** — `ThemeContext` holds `light` / `dark` preference; persists to `localStorage` and drives slate CSS variables.
 - **Server data** — TanStack Query for notes and pins lists (`useQuery` in page components).
 - **Editor state** — Custom hooks isolate concerns:
   - `useNote` — fetch/save a single note, owns the `contentEditable` ref
@@ -242,6 +283,10 @@ Route handlers validate required fields and call one service method. Authorizati
 ### Hook-based composition (frontend)
 
 The `Editor` page is intentionally thin — it wires hooks to presentational components. Async logic and refs live in hooks (`useNote`, `useAutoSave`, `usePins`).
+
+### App shell pattern (frontend)
+
+All routes render inside `AppShell` → `SlateSurface` (`page`). Pages supply only inner content; the shell owns background, slate dimensions, borders, shadow, and the theme rail. Overlays reuse `SlateSurface` (`modal`) via `FolderPanel`. See [App shell and layout](#app-shell-and-layout) above.
 
 ### Debounced auto-save with stale-closure guard
 

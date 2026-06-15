@@ -11,6 +11,12 @@
       rel="stylesheet"
     />
     <title>pinNote</title>
+    <script>
+      (function () {
+        var theme = localStorage.getItem("theme");
+        document.documentElement.dataset.theme = theme === "dark" ? "dark" : "light";
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

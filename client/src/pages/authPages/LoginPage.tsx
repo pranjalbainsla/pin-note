@@ -2,6 +2,11 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 
+const inputClassName =
+  "w-full rounded-xl border border-[var(--slate-border)] bg-transparent px-4 py-3 text-sm outline-none transition focus:border-[var(--slate-surface-text)]";
+
+const buttonClassName =
+  "w-full rounded-xl bg-[var(--slate-surface-text)] text-[var(--slate-surface)] py-3 text-sm font-medium shadow-sm hover:opacity-90 transition disabled:opacity-50";
 
 export default function LoginPage() {
   const { login, isLoading, error } = useAuth();
@@ -14,78 +19,62 @@ export default function LoginPage() {
     e.preventDefault();
     try {
       await login(email, password);
-      navigate('/home');
-      // optionally redirect here
+      navigate("/home");
     } catch (err) {
       // error already handled in context
     }
-
   };
 
-    return (
-    <div className="min-h-screen bg-white text-black flex items-center justify-center px-6 font-sans">
-        <div className="w-full max-w-sm">
-        
-        <h2 className="text-3xl font-semibold tracking-tight">
-            Login
-        </h2>
+  return (
+    <div className="flex flex-1 items-center justify-center min-h-0 p-8">
+      <div className="w-full max-w-sm text-left">
+        <h2 className="text-3xl font-semibold tracking-tight">Login</h2>
 
-        <p className="mt-2 text-sm text-neutral-500">
-            Welcome back.
-        </p>
+        <p className="mt-2 text-sm text-[var(--slate-muted)]">Welcome back.</p>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-            
-            <div>
-            <label className="block text-sm font-medium mb-2">
-                Email
-            </label>
+          <div>
+            <label className="block text-sm font-medium mb-2">Email</label>
 
             <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none transition focus:border-black"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className={inputClassName}
             />
-            </div>
+          </div>
 
-            <div>
-            <label className="block text-sm font-medium mb-2">
-                Password
-            </label>
+          <div>
+            <label className="block text-sm font-medium mb-2">Password</label>
 
             <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none transition focus:border-black"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className={inputClassName}
             />
-            </div>
+          </div>
 
-            <button
+          <button
             type="submit"
             disabled={isLoading}
-            className="w-full rounded-xl bg-black text-white py-3 text-sm font-medium shadow-sm hover:opacity-90 transition disabled:opacity-50"
-            >
+            className={buttonClassName}
+          >
             {isLoading ? "Logging in..." : "Login"}
-            </button>
+          </button>
         </form>
 
-        {error && (
-            <p className="mt-4 text-sm text-red-500">
-            {error}
-            </p>
-        )}
+        {error && <p className="mt-4 text-sm text-red-500">{error}</p>}
 
         <Link
-            to="/register"
-            className="block mt-6 text-sm text-neutral-500 hover:text-black transition"
+          to="/register"
+          className="block mt-6 text-sm text-[var(--slate-muted)] hover:text-[var(--slate-surface-text)] transition"
         >
-            Don&apos;t have an account? Sign up
+          Don&apos;t have an account? Sign up
         </Link>
-        </div>
+      </div>
     </div>
-    );
+  );
 }

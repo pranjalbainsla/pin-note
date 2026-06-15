@@ -36,14 +36,17 @@ export function usePins() {
         setError("Failed to fetch pins. Please try again later.");
         return;
       }
+      setError("");
       setPins(res.pins);
     } catch (err) {
+      setError("Failed to fetch pins. Please try again later.");
       console.error(err);
     }
   }, []);
 
   const openPinsPopup = useCallback(
     (position: PopupPosition) => {
+      setError("");
       setPopupPosition(position);
       setShowPinsPopup(true);
       fetchPins();

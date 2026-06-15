@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import AppShell from "@/components/layout/AppShell";
 import { ErrorBoundary } from "react-error-boundary";
 
 import {
@@ -14,32 +16,35 @@ import ErrorFallback from "@/components/errors/ErrorFallback";
 function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <ErrorBoundary FallbackComponent={ErrorFallback}>
-          <Routes>
-            <Route path="/" element={<LoginPage />} />
+      <ThemeProvider>
+        <AuthProvider>
+          <ErrorBoundary FallbackComponent={ErrorFallback}>
+            <AppShell>
+              <Routes>
+                <Route path="/" element={<LoginPage />} />
 
-            <Route path="/register" element={<RegisterPage />} />
-            <Route
-              path="/home"
-              element={
-                <ProtectedRoute>
-                  <HomePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/editor/:noteId"
-              element={
-                <ProtectedRoute>
-                  <Editor />
-                </ProtectedRoute>
-              }
-            />
-
-          </Routes>
-        </ErrorBoundary>
-      </AuthProvider>
+                <Route path="/register" element={<RegisterPage />} />
+                <Route
+                  path="/home"
+                  element={
+                    <ProtectedRoute>
+                      <HomePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/editor/:noteId"
+                  element={
+                    <ProtectedRoute>
+                      <Editor />
+                    </ProtectedRoute>
+                  }
+                />
+              </Routes>
+            </AppShell>
+          </ErrorBoundary>
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }

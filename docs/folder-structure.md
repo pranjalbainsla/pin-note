@@ -46,11 +46,19 @@ client/
 
 | Subfolder / file | Purpose |
 |------------------|---------|
+| `layout/` | App-wide UI shell: `AppShell`, `SlateSurface`, `ThemeToggle` |
 | `editor/` | Editor building blocks: toolbar, content area, pin popup, floating pin cards |
 | `errors/ErrorFallback.tsx` | react-error-boundary fallback UI |
-| `home/FolderPanel.tsx` | Shared modal panel used by home sub-views (notes list, pins gallery, add pin) |
+| `home/FolderPanel.tsx` | Modal overlay (`SlateSurface` variant `modal`) for home sub-views (notes list, pins gallery, add pin) |
 | `pins/PinCard.tsx` | Pin card component (present in codebase; not currently wired into active pages) |
 | `ProtectedRoute.tsx` | Redirects unauthenticated users to login |
+
+### `src/context/`
+
+| File | Purpose |
+|------|---------|
+| `AuthContext.tsx` | User session, login/register/logout, `localStorage` token persistence |
+| `ThemeContext.tsx` | Manual light/dark theme, `localStorage` persistence, `data-theme` on `<html>` |
 
 ### `src/pages/`
 
@@ -158,6 +166,7 @@ When onboarding, start with these files in order:
 
 1. `server/app.py` — entry point, middleware, error handlers
 2. `server/middleware/auth.py` — how requests are authenticated
-3. `client/src/App.tsx` — routes and auth wrapper
-4. `client/src/pages/notesPages/Editor.tsx` — core product experience
-5. `server/services/pins_service.py` — AI + YouTube integration flow
+3. `client/src/App.tsx` — routes, providers, and `AppShell` layout wrapper
+4. `client/src/components/layout/AppShell.tsx` — app-wide slate shell and theme rail
+5. `client/src/pages/notesPages/Editor.tsx` — core product experience
+6. `server/services/pins_service.py` — AI + YouTube integration flow
