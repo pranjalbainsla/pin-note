@@ -98,16 +98,18 @@ Plain Python classes (`User`, `Note`, `Pin`) with a `to_dict()` serializer. They
 |------|------|------|
 | `/` | Login | Public |
 | `/register` | Register | Public |
-| `/home` | Home (notes + pins hub) | Protected |
+| `/home` | Home (create note, add pin) | Protected |
+| `/mynotes` | Notes list | Protected |
+| `/mypins` | Pins gallery | Protected |
 | `/editor/:noteId` | Note editor | Protected |
 
 `ProtectedRoute` redirects unauthenticated users to `/`.
 
-All routes render inside `AppShell`, which provides the app-wide layout (themed background, fixed slate, theme toggle). Individual pages own only their inner content.
+All routes render inside `AppShell`, which provides the app-wide layout (themed background, fixed slate, route-aware sidebar). Individual pages own only their inner content.
 
 ### App shell and layout
 
-Every page shares a single UI shell: a themed full-viewport background with a centered **slate** (floating card) at **85vw × 85vh**. Route content renders inside the slate main area; a narrow right rail holds the theme toggle.
+Every page shares a single UI shell: a themed full-viewport background with a centered **slate** (floating card) at **85vw × 85vh**. Route content renders inside the slate main area; a narrow right **sidebar** holds navigation and the theme toggle.
 
 ```mermaid
 flowchart TB
@@ -115,7 +117,7 @@ flowchart TB
         bg["Background (--slate-page-bg)"]
         subgraph slate [SlateSurface page variant]
             main["Main area (Routes / page content)"]
-            rail["Right rail (ThemeToggle)"]
+            sidebar["AppSidebar (right rail)"]
         end
     end
     bg --> slate
@@ -123,10 +125,22 @@ flowchart TB
 
 | Component | Path | Role |
 |-----------|------|------|
-| `AppShell` | `components/layout/AppShell.tsx` | Full-viewport background + page slate + theme rail; wraps all routes in `App.tsx` |
+| `AppShell` | `components/layout/AppShell.tsx` | Full-viewport background + page slate + sidebar; wraps all routes in `App.tsx` |
+| `AppSidebar` | `components/layout/AppSidebar.tsx` | Route-aware right rail — conditional nav items + theme toggle |
+| `SidebarNavButton` | `components/layout/SidebarNavButton.tsx` | Shared `SidebarNavLink` (active route highlight) and `SidebarActionButton` (e.g. logout) |
 | `SlateSurface` | `components/layout/SlateSurface.tsx` | Shared surface primitive — `page` (app shell) or `modal` (overlays) |
-| `ThemeToggle` | `components/layout/ThemeToggle.tsx` | Sun/Moon toggle in the right rail |
+| `ThemeToggle` | `components/layout/ThemeToggle.tsx` | Sun/Moon toggle at top of sidebar |
 | `ThemeProvider` | `context/ThemeContext.tsx` | `"light"` / `"dark"` state, `localStorage` persistence, sets `data-theme` on `<html>` |
+
+**Sidebar visibility** (`AppSidebar` reads `useLocation().pathname`):
+
+| Context | Top group | Bottom group |
+|---------|-----------|--------------|
+| Auth (`/`, `/register`) | Theme toggle | — |
+| Home (`/home`) | Theme toggle, My Notes, My Pins | Logout |
+| Other authenticated (`/mynotes`, `/mypins`, `/editor/:noteId`) | Theme toggle, My Notes, My Pins | Home, Logout |
+
+Icons are from `lucide-react` (`FileText`, `Pin`, `Home`, `LogOut`). Nav items use `NavLink` for active-route styling; logout calls `AuthContext.logout`.
 
 **Theme tokens** (`client/src/index.css`, under `[data-theme="light"]` / `[data-theme="dark"]`):
 
@@ -139,9 +153,18 @@ flowchart TB
 
 Theme is user-controlled via the toggle, separate from the OS `prefers-color-scheme` vars used elsewhere in `index.css`. An inline script in `index.html` reads `localStorage` before React hydrates to avoid a flash of the wrong theme.
 
-**Modal overlays:** `FolderPanel` uses `SlateSurface` variant `modal` for in-slate overlays (folders, notes list, pins gallery, add pin). Home sub-views position these absolutely within the page's relative container.
+**Page content by route:**
 
-**Editor constraints:** Floating pins use `react-rnd` with `bounds="parent"` so they stay inside the slate. The pin picker popup (`PinsPopup`) positions relative to the editor container, not the viewport.
+| Route | Main area |
+|-------|-----------|
+| `/home` | Centered "Create a note" and "Add a pin" buttons |
+| `/mynotes` | Full-page scrollable notes grid; card click opens editor |
+| `/mypins` | Full-page scrollable pins gallery |
+| `/editor/:noteId` | Title input, `EditorContent`, status toolbar (saving/error only) |
+
+**Modal overlays:** `FolderPanel` uses `SlateSurface` variant `modal` only for the Add Pin flow on HomePage (`AddPinPage`). The overlay is positioned absolutely within HomePage's relative container with a backdrop dismiss.
+
+**Editor constraints:** Floating pins use `react-rnd` with `bounds="parent"` so they stay inside the slate. The pin picker popup (`PinsPopup`) positions relative to the editor container, not the viewport. Home and logout live in the sidebar, not in `EditorToolbar`.
 
 ### State and data fetching
 
@@ -286,7 +309,7 @@ The `Editor` page is intentionally thin — it wires hooks to presentational com
 
 ### App shell pattern (frontend)
 
-All routes render inside `AppShell` → `SlateSurface` (`page`). Pages supply only inner content; the shell owns background, slate dimensions, borders, shadow, and the theme rail. Overlays reuse `SlateSurface` (`modal`) via `FolderPanel`. See [App shell and layout](#app-shell-and-layout) above.
+All routes render inside `AppShell` → `SlateSurface` (`page`). Pages supply only inner content; the shell owns background, slate dimensions, borders, shadow, and the sidebar (`AppSidebar`). Navigation is centralized in the sidebar and varies by route (auth vs home vs other authenticated pages). List views (`/mynotes`, `/mypins`) are first-class routes, not overlays. The only remaining in-slate modal is Add Pin on HomePage via `FolderPanel`. See [App shell and layout](#app-shell-and-layout) above.
 
 ### Debounced auto-save with stale-closure guard
 
