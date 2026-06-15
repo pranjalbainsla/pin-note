@@ -16,6 +16,7 @@ export interface PopupPosition {
 }
 
 const DEFAULT_PIN_POSITION = { x: 100, y: 100, width: 320, height: 220 };
+const PIN_POSITION_SHIFT = { x: 24, y: 24 };
 
 /**
  * Manages the pins picker popup and the list of floating (draggable)
@@ -61,10 +62,15 @@ export function usePins() {
     setFloatingPins((prev) => {
       const themeIndex = prev.length;
       const without = prev.filter((p) => p.id !== pin.id);
-      return [
-        ...without,
-        { ...pin, ...DEFAULT_PIN_POSITION, themeIndex },
-      ];
+      const lastPin = without[without.length - 1];
+      const position = lastPin
+        ? {
+            ...DEFAULT_PIN_POSITION,
+            x: lastPin.x + PIN_POSITION_SHIFT.x,
+            y: lastPin.y + PIN_POSITION_SHIFT.y,
+          }
+        : { ...DEFAULT_PIN_POSITION };
+      return [...without, { ...pin, ...position, themeIndex }];
     });
   }, []);
 
