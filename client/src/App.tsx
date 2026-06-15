@@ -9,7 +9,7 @@ import {
   LoginPage,
   RegisterPage,
 } from "@/pages/authPages";
-import { HomePage } from "@/pages/homePages";
+import { HomePage, MyNotesPage, MyPinsPage } from "@/pages/homePages";
 import Editor from "@/pages/notesPages/Editor";
 import ErrorFallback from "@/components/errors/ErrorFallback";
 
@@ -29,6 +29,22 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <HomePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/mynotes"
+                  element={
+                    <ProtectedRoute>
+                      <MyNotesPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/mypins"
+                  element={
+                    <ProtectedRoute>
+                      <MyPinsPage />
                     </ProtectedRoute>
                   }
                 />

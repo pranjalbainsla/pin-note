@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { useCallback, useEffect, useRef } from "react";
+import { useParams } from "react-router-dom";
 import { useNote } from "@/hooks/useNote";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { usePins } from "@/hooks/usePins";
@@ -12,15 +11,10 @@ import EditorContent from "@/components/editor/EditorContent";
 import PinsPopup from "@/components/editor/PinsPopup";
 import FloatingPin from "@/components/editor/FloatingPin";
 
-const TYPING_IDLE_MS = 1500;
-const TOP_HOVER_ZONE_RATIO = 0.15;
-
 /**
  * Intentionally thin — wires hooks to components, owns no logic of its own.
  */
 export default function Editor() {
-  const { logout } = useAuth();
-  const navigate = useNavigate();
   const { noteId } = useParams<{ noteId: string }>();
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -42,42 +36,12 @@ export default function Editor() {
 
   const editorError = combineEditorErrors(noteError, pinsError);
 
-  const [isTyping, setIsTyping] = useState(false);
-  const [isNearTop, setIsNearTop] = useState(false);
-  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const showNav = !isTyping || isNearTop;
-
   useEffect(() => {
     fetchNote();
   }, [fetchNote]);
 
-  useEffect(() => {
-    return () => {
-      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    };
-  }, []);
-
-  useEffect(() => {
-    const onMouseMove = (e: MouseEvent) => {
-      setIsNearTop(e.clientY < window.innerHeight * TOP_HOVER_ZONE_RATIO);
-    };
-    window.addEventListener("mousemove", onMouseMove);
-    return () => window.removeEventListener("mousemove", onMouseMove);
-  }, []);
-
-  const markTyping = useCallback(() => {
-    setIsTyping(true);
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    typingTimeoutRef.current = setTimeout(() => {
-      setIsTyping(false);
-    }, TYPING_IDLE_MS);
-  }, []);
-
   const handleInput = useCallback(() => {
     if (!editorRef.current) return;
-
-    markTyping();
 
     const selection = window.getSelection();
     if (!selection?.rangeCount) return;
@@ -96,15 +60,14 @@ export default function Editor() {
 
     applyMarkdownPattern(textNode, cursorOffset, selection);
     scheduleAutoSave();
-  }, [editorRef, markTyping, openPinsPopup, scheduleAutoSave]);
+  }, [editorRef, openPinsPopup, scheduleAutoSave]);
 
   const handleTitleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      markTyping();
       setTitle(e.target.value);
       scheduleAutoSave();
     },
-    [markTyping, setTitle, scheduleAutoSave],
+    [setTitle, scheduleAutoSave],
   );
 
   if (isLoading) {
@@ -121,13 +84,7 @@ export default function Editor() {
       className="relative flex flex-1 min-h-0 overflow-auto px-6 py-10"
     >
       <div className="max-w-3xl mx-auto w-full">
-        <EditorToolbar
-          isSaving={isSaving}
-          error={editorError}
-          showNav={showNav}
-          onHome={() => navigate("/home")}
-          onLogout={logout}
-        />
+        <EditorToolbar isSaving={isSaving} error={editorError} />
 
         <input
           type="text"

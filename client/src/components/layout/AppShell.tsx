@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import SlateSurface from "./SlateSurface";
-import ThemeToggle from "./ThemeToggle";
+import AppSidebar from "./AppSidebar";
 
 type AppShellProps = {
   children: ReactNode;
@@ -14,9 +14,7 @@ export default function AppShell({ children }: AppShellProps) {
           {children}
         </main>
 
-        <aside className="flex shrink-0 flex-col items-center border-l border-[var(--slate-border)] px-3 py-4">
-          <ThemeToggle />
-        </aside>
+        <AppSidebar />
       </SlateSurface>
     </div>
   );

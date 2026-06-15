@@ -1,27 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
-import FolderPanel from "@/components/home/FolderPanel";
 import { getPins } from "@/services/pinsService";
 
-export default function MyPinsPage({
-  setShowMyPins,
-}: {
-  setShowMyPins: (show: boolean) => void;
-}) {
+export default function MyPinsPage() {
   const { data, error, isLoading } = useQuery({
     queryKey: ["pins"],
     queryFn: getPins,
   });
 
   return (
-    <FolderPanel
-      title="My Pins"
-      onClose={() => setShowMyPins(false)}
-      className="top-16 w-[950px] max-h-[720px]"
-      bodyClassName="max-h-[660px] overflow-y-auto p-8"
-    >
-      {isLoading && (
-        <div className="text-[#4A4A4A]">Loading...</div>
-      )}
+    <div className="flex flex-1 flex-col min-h-0 overflow-auto px-6 py-10">
+      <h1 className="text-lg font-medium text-[var(--slate-surface-text)] mb-8">My Pins</h1>
+
+      {isLoading && <div className="text-[var(--slate-muted)]">Loading...</div>}
 
       {error && (
         <div className="text-red-500">
@@ -30,9 +20,7 @@ export default function MyPinsPage({
       )}
 
       {!isLoading && !error && data?.pins.length === 0 && (
-        <div className="py-20 text-center text-[#8A8A8A]">
-          No pins yet.
-        </div>
+        <div className="py-20 text-center text-[var(--slate-muted)]">No pins yet.</div>
       )}
 
       <div className="columns-3 gap-5 space-y-5">
@@ -56,6 +44,6 @@ export default function MyPinsPage({
           </article>
         ))}
       </div>
-    </FolderPanel>
+    </div>
   );
 }
