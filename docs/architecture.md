@@ -257,9 +257,9 @@ This flow is entirely client-side after the initial pin list fetch:
 4. `FloatingPin` renders via `react-rnd` (draggable, resizable)
 5. Positions are **not** sent to the server — they exist only for the current editor session
 
-## Database schema (inferred)
+## Database schema
 
-No migration files exist in the repo. Expected tables based on repository queries:
+Migrations live in [`supabase/migrations/`](../supabase/migrations/). Apply them with the Supabase CLI (`npx supabase db push`) after linking your project — see the [README](../README.md#database-migrations).
 
 **profiles**
 | Column | Used by |
@@ -287,7 +287,7 @@ No migration files exist in the repo. Expected tables based on repository querie
 | `summary` | AI-generated summary |
 | `created_at` | Sort order (desc) |
 
-> **TODO:** Confirm RLS policies and whether `profiles` is populated by a Supabase trigger on signup.
+> **Note:** `20260616180100_profiles_on_signup.sql` adds a trigger on `auth.users` to insert into `profiles` on signup (required for duplicate-email checks in `AuthService`).
 
 ## Design patterns
 

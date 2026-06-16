@@ -1,2 +1,6 @@
 .vscode/
 .DS_Store
+
+# Supabase CLI temp state (migrations and config.toml are committed)
+supabase/.branches
+supabase/.temp
