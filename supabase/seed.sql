@@ -1,0 +1,2 @@
+-- Optional seed data for local or remote resets.
+-- Leave empty for this project.

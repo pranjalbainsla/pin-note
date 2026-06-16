@@ -30,9 +30,9 @@ This document records architectural choices **inferred from the current codebase
 - (+) Auth, storage, and Postgres in one managed service
 - (+) JWT validation delegated to Supabase — no custom session store
 - (−) Tight coupling to Supabase SDK and error types (`AuthApiError`, `APIError`)
-- (−) Database schema and RLS policies live outside the repo (not version-controlled here)
+- (−) Schema changes require the Supabase CLI and a linked project (`supabase/migrations/`)
 
-**Inference:** The `profiles` table is queried for duplicate-email checks separately from Supabase Auth signup. This suggests a custom profile row (possibly created by a Supabase trigger) rather than relying solely on auth metadata.
+**Inference:** The `profiles` table is queried for duplicate-email checks separately from Supabase Auth signup. Migration `20260616180100_profiles_on_signup.sql` keeps `profiles` in sync via an `auth.users` insert trigger.
 
 ---
 

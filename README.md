@@ -45,7 +45,7 @@ Data and authentication are backed by **Supabase**. Video summarization uses **G
 
 - Node.js 18+ and npm
 - Python 3.10+
-- A Supabase project with `profiles`, `notes`, and `pins` tables
+- A Supabase project (linked via the CLI — see [Database migrations](#database-migrations))
 - A Google Gemini API key
 
 ### Server
@@ -61,12 +61,49 @@ Create `server/.env`:
 
 ```env
 SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_KEY=your-service-role-or-anon-key
+SUPABASE_KEY=your-service-role-key
 GEMINI_API_KEY=your-gemini-api-key
 CLIENT_URL=http://localhost:5173
 ```
 
-> **TODO:** Database schema is not checked into this repo. Tables are inferred from repository code — see [docs/architecture.md](docs/architecture.md) for expected columns.
+Use the **service role** key on the server so PostgREST can read and write `profiles`, `notes`, and `pins` without RLS policies.
+
+### Database migrations
+
+Schema is version-controlled under [`supabase/migrations/`](supabase/migrations/). The Flask app does not run migrations; you apply them to your linked Supabase project with the CLI.
+
+**One-time setup** (requires Supabase dashboard access and your database password):
+
+```bash
+# From repo root — installs CLI via npx if needed
+./scripts/supabase-link.sh <project-ref>
+```
+
+`<project-ref>` is in the dashboard URL (`https://supabase.com/dashboard/project/<project-ref>`) or the subdomain of `SUPABASE_URL` in `server/.env`.
+
+If your remote database **already has** the app tables (created manually), baseline migration history first — do **not** run `db pull` before this:
+
+```bash
+./scripts/supabase-baseline-remote.sh
+npx supabase migration list
+```
+
+That removes any empty stub migrations from a failed `db pull`, then marks the checked-in migrations as already applied on remote. After baselining, both migrations should appear in the **Remote** column of `migration list`.
+
+> **Note:** `npx supabase db pull` requires **Docker Desktop** (it spins up a shadow database to diff schemas). This project uses a **remote-only** workflow — you do not need `db pull`. Use `migration new` + `db push` for future schema changes instead.
+
+If you do want to pull remote schema into a migration file, start Docker Desktop first, then run `npx supabase db pull`.
+
+**Future schema changes:**
+
+```bash
+npx supabase migration new describe_your_change
+# edit supabase/migrations/<timestamp>_describe_your_change.sql
+npx supabase db push
+npx supabase migration list
+```
+
+See [docs/architecture.md](docs/architecture.md) for table/column reference.
 
 ### Client
 
