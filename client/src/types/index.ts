@@ -26,5 +26,8 @@ export type Pin = {
     source_url: string | null;
     title: string;
     summary: string;
+    thumbnail_url: string | null;
+    author: string | null;
+    description: string | null;
     created_at: string | null;
 }

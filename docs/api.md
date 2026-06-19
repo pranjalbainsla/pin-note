@@ -286,7 +286,11 @@ List the current user's pins, ordered by `created_at` descending.
       "source_type": "youtube",
       "source_url": "https://www.youtube.com/watch?v=...",
       "title": "AI-generated title",
-      "summary": "AI-generated summary text..."
+      "summary": "AI-generated summary text...",
+      "thumbnail_url": "https://i.ytimg.com/vi/.../hqdefault.jpg",
+      "author": "Channel name",
+      "description": "A short 1-2 sentence preview for the pin card.",
+      "created_at": "2026-06-19T12:00:00Z"
     }
   ]
 }
@@ -298,7 +302,7 @@ Returns an empty array if the user has no pins.
 
 ### POST `/api/pins/create`
 
-Create a pin from a YouTube URL. The server fetches the transcript, summarizes it with Gemini, and stores the result.
+Create a pin from a supported URL. The server detects the source type, fetches metadata (e.g. YouTube thumbnail and channel via YouTube Data API), fetches content (e.g. transcript), summarizes it with Gemini, and stores the result.
 
 **Request body**
 
@@ -310,8 +314,8 @@ Create a pin from a YouTube URL. The server fetches the transcript, summarizes i
 
 **Validation**
 - `url` is required (`ValidationError`, 400)
-- Must be a valid YouTube URL (`ValidationError`, 400)
-- Transcript must be available (`ValidationError`, 400)
+- Must match a supported source handler (`ValidationError`, 400 — `"Unsupported URL"`)
+- For YouTube: must be a valid URL with an available transcript (`ValidationError`, 400)
 
 Supported URL formats (from `extract_video_id`):
 - `https://www.youtube.com/watch?v=VIDEO_ID`
@@ -328,7 +332,11 @@ Supported URL formats (from `extract_video_id`):
     "source_type": "youtube",
     "source_url": "https://www.youtube.com/watch?v=...",
     "title": "Concise engaging title",
-    "summary": "A well-written summary..."
+    "summary": "A well-written summary...",
+    "thumbnail_url": "https://i.ytimg.com/vi/.../hqdefault.jpg",
+    "author": "Channel name",
+    "description": "A short 1-2 sentence preview for the pin card.",
+    "created_at": "2026-06-19T12:00:00Z"
   }
 }
 ```
@@ -340,6 +348,7 @@ Supported URL formats (from `extract_video_id`):
 | 400 | `"URL is required"` |
 | 400 | `"Invalid YouTube URL"` |
 | 400 | `"Transcript not available for this video"` |
+| 400 | `"Unsupported URL"` |
 
 ---
 

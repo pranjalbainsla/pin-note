@@ -1,16 +1,6 @@
 from repositories.pins_repository import IPinsRepository
-from exceptions import ValidationError
-from utils.youtube_transcript import (
-    extract_video_id,
-    get_youtube_transcript,
-)
 from utils.gemini_client import summarize_transcript
-from youtube_transcript_api._errors import (
-    InvalidVideoId,
-    NoTranscriptFound,
-    TranscriptsDisabled,
-    VideoUnavailable,
-)
+from utils.sources.registry import get_handler_for_url
 
 
 class PinsService:
@@ -22,24 +12,21 @@ class PinsService:
         return self.pins_repository.get_pins_by_user_id(user_id)
 
     def create_pin(self, user_id: str, url: str):
-        try:
-            video_id = extract_video_id(url)
-        except (KeyError, IndexError):
-            raise ValidationError("Invalid YouTube URL")
+        handler = get_handler_for_url(url)
+        metadata = handler.fetch_metadata(url)
+        content = handler.fetch_content(url)
+        ai_response = summarize_transcript(content)
 
-        try:
-            transcript = get_youtube_transcript(video_id)
-        except InvalidVideoId:
-            raise ValidationError("Invalid YouTube URL")
-        except (NoTranscriptFound, TranscriptsDisabled, VideoUnavailable):
-            raise ValidationError("Transcript not available for this video")
-
-        ai_response = summarize_transcript(transcript)
+        author = metadata.author or ai_response.get("author")
+        description = metadata.description or ai_response["description"]
 
         return self.pins_repository.create_pin(
             user_id=user_id,
-            source_type="youtube",
+            source_type=handler.source_type,
             source_url=url,
             title=ai_response["title"],
             summary=ai_response["summary"],
+            thumbnail_url=metadata.thumbnail_url,
+            author=author,
+            description=description,
         )

@@ -37,6 +37,7 @@ Data and authentication are backed by **Supabase**. Video summarization uses **G
 - Layered architecture: routes → services → repositories
 - Supabase (auth + Postgres via PostgREST)
 - Google Gemini (`gemini-2.5-flash`) for transcript summarization
+- YouTube Data API v3 for video thumbnails and channel metadata
 - youtube-transcript-api for fetching video captions
 
 ## Setup
@@ -47,6 +48,7 @@ Data and authentication are backed by **Supabase**. Video summarization uses **G
 - Python 3.10+
 - A Supabase project (linked via the CLI — see [Database migrations](#database-migrations))
 - A Google Gemini API key
+- A YouTube Data API v3 key (for pin thumbnails and channel names)
 
 ### Server
 
@@ -63,6 +65,7 @@ Create `server/.env`:
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_KEY=your-service-role-key
 GEMINI_API_KEY=your-gemini-api-key
+YOUTUBE_API_KEY=your-youtube-data-api-v3-key
 CLIENT_URL=http://localhost:5173
 ```
 
