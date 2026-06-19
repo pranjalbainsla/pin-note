@@ -16,7 +16,7 @@ const EditorContent = forwardRef<HTMLDivElement, EditorContentProps>(
       contentEditable={isEditable}
       suppressContentEditableWarning
       onInput={onInput}
-      className="editor-canvas min-h-[500px] outline-none text-lg leading-[1.75] text-[#4A4A4A] text-left max-w-none font-[family-name:var(--font-serif)]"
+      className="editor-canvas min-h-[500px] outline-none text-lg leading-[1.5] text-[#4A4A4A] text-left max-w-none font-[family-name:var(--font-serif)]"
       data-placeholder="Start writing..."
     />
   ),
