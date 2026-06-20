@@ -49,7 +49,7 @@ export default function PinsPopup({
       <div className="absolute inset-0 z-40" onClick={onClose} aria-hidden="true" />
 
       <div
-        className="absolute z-50 w-[280px] max-h-[320px] overflow-hidden rounded-2xl border border-[var(--slate-border)] bg-[var(--slate-surface)]/85 backdrop-blur-md shadow-[var(--slate-shadow)] popup-animate-in"
+        className="absolute z-50 w-[280px] max-h-[320px] overflow-hidden rounded-2xl border border-[var(--slate-border)] bg-[var(--slate-surface)]/90 backdrop-blur-md shadow-[var(--slate-shadow)] popup-animate-in"
         style={{ left, top }}
         onClick={(e) => e.stopPropagation()}
       >

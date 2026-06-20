@@ -109,7 +109,7 @@ All routes render inside `AppShell`, which provides the app-wide layout (themed 
 
 ### App shell and layout
 
-Every page shares a single UI shell: a themed full-viewport background with a centered **slate** (floating card) at **85vw × 85vh**. Route content renders inside the slate main area; a narrow right **sidebar** holds navigation and the theme toggle.
+Every page shares a single UI shell: a themed full-viewport background with a centered **slate** (floating card) at **90vw × 90vh**. Route content renders inside the slate main area; a narrow right **sidebar** holds navigation and the theme toggle.
 
 ```mermaid
 flowchart TB
@@ -149,7 +149,7 @@ Icons are from `lucide-react` (`FileText`, `Pin`, `Home`, `LogOut`). Nav items u
 | `--slate-page-bg` | Soft pink background | Off-white background |
 | `--slate-surface` | Cream slate | Black slate |
 | `--slate-surface-text` | Dark text | Light text |
-| `--slate-width` / `--slate-height` | 85vw / 85vh | 85vw / 85vh |
+| `--slate-width` / `--slate-height` | 90vw / 90vh | 90vw / 90vh |
 
 Theme is user-controlled via the toggle, separate from the OS `prefers-color-scheme` vars used elsewhere in `index.css`. An inline script in `index.html` reads `localStorage` before React hydrates to avoid a flash of the wrong theme.
 

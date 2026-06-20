@@ -7,8 +7,8 @@
   --slate-muted: #8a8a8a;
   --slate-border: #e8e6e1;
   --slate-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
-  --slate-width: 85vw;
-  --slate-height: 85vh;
+  --slate-width: 90vw;
+  --slate-height: 90vh;
 }
 
 [data-theme="dark"] {
@@ -18,8 +18,8 @@
   --slate-muted: #9ca3af;
   --slate-border: #2e2e2e;
   --slate-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.25);
-  --slate-width: 85vw;
-  --slate-height: 85vh;
+  --slate-width: 90vw;
+  --slate-height: 90vh;
 }
 
 :root {
@@ -162,4 +162,11 @@ code {
 
 .popup-animate-in {
   animation: popup-in 0.2s ease-out;
+}
+
+html.theme-changing,
+html.theme-changing * {
+  transition-property: background-color, color, border-color, box-shadow, fill, stroke;
+  transition-duration: 300ms;
+  transition-timing-function: ease;
 }

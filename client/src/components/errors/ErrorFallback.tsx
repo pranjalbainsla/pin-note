@@ -17,10 +17,7 @@ export default function ErrorFallback({ resetErrorBoundary }: FallbackProps) {
           Try again
         </button>
         <button
-          onClick={() => {
-            resetErrorBoundary();
-            navigate("/home");
-          }}
+          onClick={() => navigate("/home", { replace: true })}
           className="text-sm px-4 py-2 rounded-lg bg-[var(--slate-surface-text)] text-[var(--slate-surface)] hover:opacity-90"
         >
           Go home

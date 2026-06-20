@@ -42,7 +42,7 @@ export default function AddPinPage({
     <FolderPanel
       title="Add Pin"
       onClose={() => setShowAddPin(false)}
-      className="top-20 w-[850px] min-h-[550px]"
+      className="top-40 w-[850px] min-h-[550px]"
       bodyClassName="p-10"
     >
       <div

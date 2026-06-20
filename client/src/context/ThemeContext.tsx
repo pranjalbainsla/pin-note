@@ -1,37 +1,46 @@
 import {
-  createContext,
   useCallback,
-  useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
-
-type Theme = "light" | "dark";
-
-const STORAGE_KEY = "theme";
-
-type ThemeContextType = {
-  theme: Theme;
-  toggleTheme: () => void;
-};
-
-const ThemeContext = createContext<ThemeContextType | null>(null);
+import {
+  STORAGE_KEY,
+  ThemeContext,
+  type Theme,
+} from "@/context/theme-context";
 
 function getStoredTheme(): Theme {
   const stored = localStorage.getItem(STORAGE_KEY);
   return stored === "dark" ? "dark" : "light";
 }
 
-function applyTheme(theme: Theme) {
+const THEME_TRANSITION_MS = 300;
+
+function applyTheme(theme: Theme, animate = false) {
+  if (animate) {
+    document.documentElement.classList.add("theme-changing");
+  }
+
   document.documentElement.dataset.theme = theme;
+
+  if (animate) {
+    window.setTimeout(() => {
+      document.documentElement.classList.remove("theme-changing");
+    }, THEME_TRANSITION_MS);
+  }
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(getStoredTheme);
+  const isInitialMount = useRef(true);
 
   useEffect(() => {
-    applyTheme(theme);
+    const animate = !isInitialMount.current;
+    isInitialMount.current = false;
+
+    applyTheme(theme, animate);
     localStorage.setItem(STORAGE_KEY, theme);
   }, [theme]);
 
@@ -44,12 +53,4 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       {children}
     </ThemeContext.Provider>
   );
-}
-
-export function useTheme() {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error("useTheme must be used within a ThemeProvider");
-  }
-  return context;
 }

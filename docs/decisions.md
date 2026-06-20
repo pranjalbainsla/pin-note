@@ -209,7 +209,7 @@ This document records architectural choices **inferred from the current codebase
 
 ## App-wide SlateSurface shell with manual theme toggle
 
-**Decision:** Wrap all routes in `AppShell` — a fixed 85vw × 85vh slate centered on a themed background — with a shared `SlateSurface` primitive for both the page shell and modal overlays (`FolderPanel`).
+**Decision:** Wrap all routes in `AppShell` — a fixed 90vw × 90vh slate centered on a themed background — with a shared `SlateSurface` primitive for both the page shell and modal overlays (`FolderPanel`).
 
 **Why it's chosen:** For a minimal, calm UI where all functionality lives inside a single floating workspace (cream slate on pink in light mode; black slate on off-white in dark mode). A unified shell avoids per-page background/layout duplication and leaves room for future docked/minimized slate behavior. (correction: macos-style docked/minimised behaviour for pins)
 
