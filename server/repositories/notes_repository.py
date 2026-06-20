@@ -32,7 +32,7 @@ class SupabaseNotesRepository(INotesRepository):
     def get_notes_by_user_id(self, user_id: str) -> list[Note]:
         response = (
             supabase.table("notes")
-            .select("id, user_id, title, content")
+            .select("id, user_id, title, content, updated_at")
             .eq("user_id", user_id)
             .neq("title", "")
             .order("updated_at", desc=True)
@@ -45,6 +45,7 @@ class SupabaseNotesRepository(INotesRepository):
                 user_id=note_data["user_id"],
                 title=note_data["title"],
                 content=note_data["content"],
+                updated_at=note_data.get("updated_at"),
             )
             for note_data in response.data
         ]
@@ -52,7 +53,7 @@ class SupabaseNotesRepository(INotesRepository):
     def get_note_by_id(self, note_id: str) -> Note:
         response = (
             supabase.table("notes")
-            .select("id, user_id, title, content")
+            .select("id, user_id, title, content, updated_at")
             .eq("id", note_id)
             .execute()
         )
@@ -67,6 +68,7 @@ class SupabaseNotesRepository(INotesRepository):
             user_id=note_data["user_id"],
             title=note_data["title"],
             content=note_data["content"],
+            updated_at=note_data.get("updated_at"),
         )
 
     def create_note(self, user_id: str, title: str, content: str) -> Note:
@@ -87,6 +89,7 @@ class SupabaseNotesRepository(INotesRepository):
             user_id=note_data["user_id"],
             title=note_data["title"],
             content=note_data["content"],
+            updated_at=note_data.get("updated_at"),
         )
 
     def update_note(self, note_id: str, user_id: str, title: str, content: str) -> None:
