@@ -47,7 +47,7 @@ client/
 | Subfolder / file | Purpose |
 |------------------|---------|
 | `layout/` | App-wide UI shell: `AppShell`, `SlateSurface`, `ThemeToggle` |
-| `editor/` | Editor building blocks: toolbar, content area, pin popup, floating pin cards |
+| `editor/` | Editor building blocks: toolbar, `NoteEditor`, `EditorFormatMenu` (Escape dismisses), pin popup, floating pin cards |
 | `errors/ErrorFallback.tsx` | react-error-boundary fallback UI |
 | `home/FolderPanel.tsx` | Modal overlay (`SlateSurface` variant `modal`) for home sub-views (notes list, pins gallery, add pin) |
 | `pins/PinCard.tsx` | Pin card component (present in codebase; not currently wired into active pages) |
@@ -68,7 +68,7 @@ Organized by feature area. Each folder has an `index.ts` barrel export.
 |--------|-------|
 | `authPages/` | `LoginPage`, `RegisterPage` |
 | `homePages/` | `HomePage` hub plus `MyNotesPage`, `MyPinsPage`, `AddPinPage` overlays |
-| `notesPages/` | `Editor` — the main note-writing experience |
+| `notesPages/` | `Editor` — Tiptap wiring, auto-save, format menu; Ctrl+C exits active bold/italic |
 
 ### `src/hooks/`
 

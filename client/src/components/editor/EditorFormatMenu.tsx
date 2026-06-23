@@ -32,14 +32,7 @@ export default function EditorFormatMenu({
 }: EditorFormatMenuProps) {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-        return;
-      }
-      if (e.ctrlKey && e.key === "c") {
-        e.preventDefault();
-        onClose();
-      }
+      if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);

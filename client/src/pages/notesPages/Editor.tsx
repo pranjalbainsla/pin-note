@@ -161,6 +161,28 @@ export default function Editor() {
     dismissFormatMenu();
   }, [editor, clearSlashTrigger, dismissFormatMenu]);
 
+  const handleExitBoldItalic = useCallback(() => {
+    if (!editor) return;
+    const chain = editor.chain().focus();
+    if (editor.isActive("bold")) chain.unsetBold();
+    if (editor.isActive("italic")) chain.unsetItalic();
+    chain.run();
+  }, [editor]);
+
+  useEffect(() => {
+    if (!editor) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (!e.ctrlKey || e.key !== "c") return;
+      if (!editor.isActive("bold") && !editor.isActive("italic")) return;
+      e.preventDefault();
+      handleExitBoldItalic();
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [editor, handleExitBoldItalic]);
+
   const handleTitleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setTitle(e.target.value);

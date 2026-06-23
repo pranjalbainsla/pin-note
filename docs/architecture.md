@@ -164,7 +164,7 @@ Theme is user-controlled via the toggle, separate from the OS `prefers-color-sch
 
 **Modal overlays:** `FolderPanel` uses `SlateSurface` variant `modal` only for the Add Pin flow on HomePage (`AddPinPage`). The overlay is positioned absolutely within HomePage's relative container with a backdrop dismiss.
 
-**Editor constraints:** The format menu (`EditorFormatMenu`) positions relative to the editor container. Document font size is applied via `.editor-font-wrapper` with a CSS transition. Active bold/italic shows as B/I labels in the sidebar above Home. Home and logout live in the sidebar, not in `EditorToolbar`.
+**Editor constraints:** The format menu (`EditorFormatMenu`) positions relative to the editor container. Document font size is applied via `.editor-font-wrapper` with a CSS transition. Active bold/italic shows as B/I labels in the sidebar above Home; **Ctrl+C** clears active bold/italic marks at the cursor (handled in `Editor.tsx`). Home and logout live in the sidebar, not in `EditorToolbar`.
 
 ### State and data fetching
 
@@ -253,7 +253,8 @@ sequenceDiagram
 1. User types `/` → `slashFormatMenu` opens `EditorFormatMenu` at cursor
 2. A⁻/A⁺ adjusts `font_size_px` (14–28, step 2) on the whole document; saved immediately
 3. B/I toggles inline marks; menu closes and `/` trigger is removed
-4. Escape, backdrop click, or Ctrl+C dismisses the menu
+4. Escape or backdrop click dismisses the menu
+5. **Ctrl+C** exits active bold/italic at the cursor (`unsetBold` / `unsetItalic` in `Editor.tsx`; only when a mark is active)
 
 ### Pin insertion in editor (removed)
 

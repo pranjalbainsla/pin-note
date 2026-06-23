@@ -205,16 +205,16 @@ This document records architectural choices **inferred from the current codebase
 
 ## Slash command for format menu
 
-**Decision:** Typing `/` in the editor opens `EditorFormatMenu` at the cursor (font size A⁻/A⁺, bold, italic). Dismiss with Escape, backdrop click, or Ctrl+C.
+**Decision:** Typing `/` in the editor opens `EditorFormatMenu` at the cursor (font size A⁻/A⁺, bold, italic). Dismiss with Escape or backdrop click. **Ctrl+C** exits active bold/italic at the cursor.
 
-**Why it was chosen:** `slashFormatMenu` Tiptap extension uses `@tiptap/suggestion` to detect `/` and position the menu. Bold/italic state is mirrored in the sidebar above Home via `EditorFormatContext`.
+**Why it was chosen:** `slashFormatMenu` Tiptap extension uses `@tiptap/suggestion` to detect `/` and position the menu. Bold/italic state is mirrored in the sidebar above Home via `EditorFormatContext`. Ctrl+C reuses a chord that does not conflict with copy on macOS (Cmd+C) to clear stored marks without closing the menu flow.
 
 **Tradeoffs:**
 
 - (+) Familiar slash-command pattern without a permanent toolbar
 - (+) Font size changes apply document-wide via `font_size_px` column
 - (−) Triggers on `/` at a word boundary (same as prior pin picker behavior)
-- (−) Ctrl+C dismisses menu while open (reserves shortcut space for future formatting keys)
+- (−) Ctrl+C clears formatting only when bold/italic is active; on Windows/Linux it overrides copy in that state
 
 ---
 
