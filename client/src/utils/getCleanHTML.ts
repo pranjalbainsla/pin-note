@@ -1,9 +1,8 @@
-import DOMPurify from "dompurify"; 
+import DOMPurify from "dompurify";
 
-export default function getCleanHTML(el: HTMLDivElement): string {
-  const raw = el.innerHTML.replace(/\u200B/g, "");
-  return DOMPurify.sanitize(raw, {
+export default function getCleanHTML(html: string): string {
+  return DOMPurify.sanitize(html, {
     ALLOWED_TAGS: ["strong", "em", "code", "br", "p", "div"],
-    ALLOWED_ATTR: [], // no attributes needed
+    ALLOWED_ATTR: [],
   });
 }

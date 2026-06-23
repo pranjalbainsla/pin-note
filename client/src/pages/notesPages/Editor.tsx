@@ -1,15 +1,22 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useParams } from "react-router-dom";
+import { useEditor, type Editor as TiptapEditor } from "@tiptap/react";
+import type { Range } from "@tiptap/core";
 import { useNote } from "@/hooks/useNote";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import { usePins } from "@/hooks/usePins";
-import { applyMarkdownPattern } from "@/utils/applyMarkdownPattern";
-import { combineEditorErrors } from "@/utils/combineEditorErrors";
-import { AUTOSAVE_DELAY_MS } from "@/constants/editor";
+import { useEditorFormatMenu } from "@/hooks/useEditorFormatMenu";
+import {
+  resetEditorFormatState,
+  useEditorFormat,
+} from "@/context/EditorFormatContext";
+import { AUTOSAVE_DELAY_MS, FONT_SIZE_STEP_PX } from "@/constants/editor";
+import { getEditorExtensions } from "@/lib/editorExtensions";
 import EditorToolbar from "@/components/editor/EditorToolbar";
-import EditorContent from "@/components/editor/EditorContent";
-import PinsPopup from "@/components/editor/PinsPopup";
-import FloatingPin from "@/components/editor/FloatingPin";
+import NoteEditor from "@/components/editor/NoteEditor";
+import EditorFormatMenu from "@/components/editor/EditorFormatMenu";
+
+const EDITOR_CLASS =
+  "editor-canvas min-h-[500px] outline-none leading-[1.5] text-left max-w-none font-[family-name:var(--font-serif)]";
 
 /**
  * Intentionally thin — wires hooks to components, owns no logic of its own.
@@ -17,50 +24,142 @@ import FloatingPin from "@/components/editor/FloatingPin";
 export default function Editor() {
   const { noteId } = useParams<{ noteId: string }>();
   const containerRef = useRef<HTMLDivElement>(null);
+  const suggestionRangeRef = useRef<Range | null>(null);
+  const scheduleAutoSaveRef = useRef<() => void>(() => {});
 
-  const { title, setTitle, isLoading, isSaving, error: noteError, editorRef, fetchNote, saveNote } =
-    useNote(noteId);
-  const { scheduleAutoSave } = useAutoSave(saveNote, AUTOSAVE_DELAY_MS);
+  const editorFormat = useEditorFormat();
   const {
-    showPinsPopup,
+    showFormatMenu,
     popupPosition,
-    closePinsPopup,
-    pins,
-    floatingPins,
-    error: pinsError,
-    openPinsPopup,
-    insertPin,
-    removePin,
-    updatePinPosition,
-  } = usePins();
+    openFormatMenu,
+    closeFormatMenu,
+  } = useEditorFormatMenu();
 
-  const editorError = combineEditorErrors(noteError, pinsError);
+  const openFormatMenuRef = useRef(openFormatMenu);
+  const closeFormatMenuRef = useRef(closeFormatMenu);
+
+  useEffect(() => {
+    openFormatMenuRef.current = openFormatMenu;
+  }, [openFormatMenu]);
+
+  useEffect(() => {
+    closeFormatMenuRef.current = closeFormatMenu;
+  }, [closeFormatMenu]);
+
+  const dismissFormatMenu = useCallback(() => {
+    closeFormatMenuRef.current();
+  }, []);
+
+  const clearSlashTrigger = useCallback((editorInstance: TiptapEditor) => {
+    if (suggestionRangeRef.current) {
+      editorInstance.chain().focus().deleteRange(suggestionRangeRef.current).run();
+      suggestionRangeRef.current = null;
+    }
+  }, []);
+
+  const extensions = useMemo(
+    () =>
+      getEditorExtensions({
+        onOpen: ({ clientRect, range }) => {
+          suggestionRangeRef.current = range;
+          const rect = clientRect?.();
+          if (rect) {
+            openFormatMenuRef.current({ x: rect.left, y: rect.bottom + 6 });
+          }
+        },
+        onClose: () => {
+          suggestionRangeRef.current = null;
+          closeFormatMenuRef.current();
+        },
+      }),
+    [],
+  );
+
+  const editor = useEditor({
+    extensions,
+    editable: !!noteId,
+    editorProps: {
+      attributes: {
+        class: EDITOR_CLASS,
+      },
+    },
+    onUpdate: () => scheduleAutoSaveRef.current(),
+  });
+
+  const {
+    title,
+    setTitle,
+    fontSizePx,
+    isLoading,
+    isSaving,
+    error: noteError,
+    fetchNote,
+    saveNote,
+    saveFontSize,
+  } = useNote(noteId, editor);
+  const { scheduleAutoSave } = useAutoSave(saveNote, AUTOSAVE_DELAY_MS);
+
+  useEffect(() => {
+    scheduleAutoSaveRef.current = scheduleAutoSave;
+  }, [scheduleAutoSave]);
+
+  useEffect(() => {
+    if (editor) {
+      editor.setEditable(!!noteId && !isLoading);
+    }
+  }, [editor, noteId, isLoading]);
 
   useEffect(() => {
     fetchNote();
   }, [fetchNote]);
 
-  const handleInput = useCallback(() => {
-    if (!editorRef.current) return;
+  useEffect(() => {
+    if (!editor || !editorFormat) return;
 
-    const selection = window.getSelection();
-    if (!selection?.rangeCount) return;
+    const syncFormatState = () => {
+      editorFormat.setFormatState({
+        isBold: editor.isActive("bold"),
+        isItalic: editor.isActive("italic"),
+      });
+    };
 
-    const range = selection.getRangeAt(0);
-    if (range.startContainer.nodeType !== Node.TEXT_NODE) return;
+    syncFormatState();
+    editor.on("selectionUpdate", syncFormatState);
+    editor.on("transaction", syncFormatState);
 
-    const textNode = range.startContainer as Text;
-    const cursorOffset = range.startOffset;
-    const textUpToCursor = (textNode.textContent ?? "").slice(0, cursorOffset);
+    return () => {
+      editor.off("selectionUpdate", syncFormatState);
+      editor.off("transaction", syncFormatState);
+      resetEditorFormatState(editorFormat.setFormatState);
+    };
+  }, [editor, editorFormat]);
 
-    if (textUpToCursor.endsWith("/")) {
-      const rect = range.getBoundingClientRect();
-      openPinsPopup({ x: rect.left, y: rect.bottom + 6 });
-    }
+  const handleCloseFormatMenu = useCallback(() => {
+    if (editor) clearSlashTrigger(editor);
+    dismissFormatMenu();
+  }, [editor, clearSlashTrigger, dismissFormatMenu]);
 
-    applyMarkdownPattern(textNode, cursorOffset, selection);
-    scheduleAutoSave();
-  }, [editorRef, openPinsPopup, scheduleAutoSave]);
+  const handleDecreaseFontSize = useCallback(() => {
+    void saveFontSize(fontSizePx - FONT_SIZE_STEP_PX);
+  }, [fontSizePx, saveFontSize]);
+
+  const handleIncreaseFontSize = useCallback(() => {
+    void saveFontSize(fontSizePx + FONT_SIZE_STEP_PX);
+  }, [fontSizePx, saveFontSize]);
+
+  const handleToggleBold = useCallback(() => {
+    if (!editor) return;
+    clearSlashTrigger(editor);
+    editor.chain().focus().toggleBold().run();
+    dismissFormatMenu();
+  }, [editor, clearSlashTrigger, dismissFormatMenu]);
+
+  const handleToggleItalic = useCallback(() => {
+    if (!editor) return;
+    clearSlashTrigger(editor);
+    editor.chain().focus().toggleItalic().run();
+    dismissFormatMenu();
+  }, [editor, clearSlashTrigger, dismissFormatMenu]);
 
   const handleTitleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,7 +183,7 @@ export default function Editor() {
       className="relative flex flex-1 min-h-0 overflow-auto px-6 py-10"
     >
       <div className="max-w-3xl mx-auto w-full">
-        <EditorToolbar isSaving={isSaving} error={editorError} />
+        <EditorToolbar isSaving={isSaving} error={noteError} />
 
         <input
           type="text"
@@ -95,27 +194,27 @@ export default function Editor() {
           className="w-full text-4xl font-semibold tracking-tight text-[var(--slate-surface-text)] placeholder:text-[var(--slate-muted)] outline-none border-none mb-10 disabled:opacity-50 bg-transparent font-[family-name:var(--font-ui)]"
         />
 
-        <EditorContent ref={editorRef} isEditable={!!noteId} onInput={handleInput} />
+        <div
+          className="editor-font-wrapper"
+          style={{ fontSize: `${fontSizePx}px` }}
+        >
+          <NoteEditor editor={editor} />
+        </div>
       </div>
 
-      {showPinsPopup && popupPosition && (
-        <PinsPopup
-          pins={pins}
+      {showFormatMenu && popupPosition && editor && (
+        <EditorFormatMenu
+          editor={editor}
           position={popupPosition}
           boundsRef={containerRef}
-          onClose={closePinsPopup}
-          onSelect={insertPin}
+          fontSizePx={fontSizePx}
+          onClose={handleCloseFormatMenu}
+          onDecreaseFontSize={handleDecreaseFontSize}
+          onIncreaseFontSize={handleIncreaseFontSize}
+          onToggleBold={handleToggleBold}
+          onToggleItalic={handleToggleItalic}
         />
       )}
-
-      {floatingPins.map((pin) => (
-        <FloatingPin
-          key={pin.id}
-          pin={pin}
-          onClose={removePin}
-          onPositionChange={updatePinPosition}
-        />
-      ))}
     </div>
   );
 }

@@ -113,37 +113,48 @@ This document records architectural choices **inferred from the current codebase
 
 ---
 
-## contentEditable editor instead of a rich-text library
+## Tiptap editor with trimmed StarterKit
 
-**Decision:** Build the note editor on a native `contentEditable` div with custom markdown shortcut handling.
+**Decision:** Use Tiptap (`@tiptap/react`) with a trimmed StarterKit (bold, italic, code, paragraph, history only) for the note editor. HTML is sanitized with DOMPurify before save. Typing `/` opens an `EditorFormatMenu` (font size, bold, italic) via `@tiptap/suggestion`.
 
-**Why it appears to have been chosen:** `EditorContent` is a plain `contentEditable` div. Formatting is applied by `applyMarkdownPattern` on keystroke. HTML is sanitized with DOMPurify before save. The `@uiw/react-md-editor` package is listed in dependencies but not used in the active editor code.
+**Why it was chosen:** Replaces a custom `contentEditable` div and hand-rolled markdown shortcut logic with ProseMirror-backed editing, while keeping the same HTML storage format and allowed tag set.
 
 **Tradeoffs:**
 
-- (+) Lightweight, full control over editing behavior
+- (+) Reliable cursor, undo/redo, and markdown input rules via StarterKit
 - (+) HTML stored directly — no conversion layer
-- (−) contentEditable is notoriously inconsistent across browsers
-- (−) Limited formatting (bold, italic, code only)
-- (−) Unused dependency (`@uiw/react-md-editor`) adds bundle weight
-
-**Inference:** The md-editor dependency may be leftover from an earlier approach or planned feature.
+- (+) Extension-based architecture for future formatting features
+- (−) Larger client bundle than the prior contentEditable approach
+- (−) Limited formatting (bold, italic, code only) — same as before
 
 ---
 
-## Client-side-only floating pin positions
+## Per-note font size in database (`font_size_px`)
 
-**Decision:** Pin cards inserted into the editor (`FloatingPin` via `react-rnd`) store position/size in React state only — not persisted to the server or embedded in note content.
+**Decision:** Store document-wide font size as `font_size_px` (integer, 14–28, default 18) on the `notes` table — not inline in HTML.
 
-**Why it appears to have been chosen:** `usePins` manages `floatingPins` in component state. `saveNote` saves only title and HTML content from the editor div. No API endpoint exists for pin placement within notes.
+**Why it was chosen:** Font size applies uniformly to the entire note body (Apple Books–style). A separate column keeps presentation out of content HTML and allows a CSS transition on the editor wrapper without parsing inline styles.
 
 **Tradeoffs:**
 
-- (+) Simple implementation — no schema changes needed
-- (+) Pins can be repositioned freely without save conflicts
-- (−) Pin layout is lost on page refresh
-- (−) Pins are not part of the exported/shared note content
-- (−) Multiple editor sessions for the same note won't share pin placements
+- (+) Clean separation of content vs. display preference
+- (+) Smooth `transition: font-size` on `.editor-font-wrapper`
+- (+) Clamped server-side and client-side
+- (−) Requires migration and API changes on create/update
+
+---
+
+## Client-side-only floating pin positions (legacy / unused in editor)
+
+**Decision:** Pin cards (`FloatingPin` via `react-rnd`) were designed to store position/size in React state only — not persisted to the server. The editor no longer inserts pins via `/`; pin management remains on Home and My Pins pages.
+
+**Why it appears to have been chosen:** `usePins` manages `floatingPins` in component state. `saveNote` saves title, HTML content, and `font_size_px` from the Tiptap editor.
+
+**Tradeoffs:**
+
+- (+) Simple implementation — no schema changes needed for pin placement
+- (−) Pin-in-editor flow removed in favor of format menu
+- (−) `PinsPopup` / `FloatingPin` components remain in codebase but are not wired to the editor
 
 ---
 
@@ -151,7 +162,7 @@ This document records architectural choices **inferred from the current codebase
 
 **Decision:** Use React Query for notes/pins list fetching; use bespoke hooks for the editor's fetch/save cycle.
 
-**Why it appears to have been chosen:** `MyNotesPage` and `MyPinsPage` use `useQuery`. The editor uses `useNote` + `useAutoSave` with manual state because it needs a DOM ref, debounced saves, and tight coupling to contentEditable events.
+**Why it appears to have been chosen:** `MyNotesPage` and `MyPinsPage` use `useQuery`. The editor uses `useNote` + `useAutoSave` with manual state because it needs a Tiptap editor instance, debounced saves, and tight coupling to editor update events.
 
 **Tradeoffs:**
 
@@ -192,18 +203,18 @@ This document records architectural choices **inferred from the current codebase
 
 ---
 
-## Slash command for pin insertion
+## Slash command for format menu
 
-**Decision:** Typing `/` in the editor opens a pin picker popup at the cursor position.
+**Decision:** Typing `/` in the editor opens `EditorFormatMenu` at the cursor (font size A⁻/A⁺, bold, italic). Dismiss with Escape, backdrop click, or Ctrl+C.
 
-**Why it appears to have been chosen:** `Editor.handleInput` detects `/` at the end of the current text node and calls `openPinsPopup` with cursor coordinates.
+**Why it was chosen:** `slashFormatMenu` Tiptap extension uses `@tiptap/suggestion` to detect `/` and position the menu. Bold/italic state is mirrored in the sidebar above Home via `EditorFormatContext`.
 
 **Tradeoffs:**
 
-- (+) Familiar pattern (similar to slash commands in Notion, etc.)
-- (+) Non-intrusive — doesn't require toolbar buttons
-- (−) Triggers on any `/` at end of text, including inside words or URLs
-- (−) No search/filter within the popup
+- (+) Familiar slash-command pattern without a permanent toolbar
+- (+) Font size changes apply document-wide via `font_size_px` column
+- (−) Triggers on `/` at a word boundary (same as prior pin picker behavior)
+- (−) Ctrl+C dismisses menu while open (reserves shortcut space for future formatting keys)
 
 ---
 

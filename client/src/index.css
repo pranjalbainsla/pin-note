@@ -143,10 +143,16 @@ code {
   scrollbar-width: none;
 }
 
-.editor-canvas:empty::before {
+.editor-font-wrapper {
+  transition: font-size 0.35s ease;
+}
+
+.editor-canvas p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   color: #c8c6c0;
   pointer-events: none;
+  float: left;
+  height: 0;
 }
 
 @keyframes popup-in {

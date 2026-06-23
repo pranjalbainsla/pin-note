@@ -160,11 +160,11 @@ Theme is user-controlled via the toggle, separate from the OS `prefers-color-sch
 | `/home` | Centered "Create a note" and "Add a pin" buttons |
 | `/mynotes` | Full-page scrollable notes grid; card click opens editor |
 | `/mypins` | Full-page scrollable pins gallery |
-| `/editor/:noteId` | Title input, `EditorContent`, status toolbar (saving/error only) |
+| `/editor/:noteId` | Title input, Tiptap `NoteEditor`, status toolbar (saving/error only) |
 
 **Modal overlays:** `FolderPanel` uses `SlateSurface` variant `modal` only for the Add Pin flow on HomePage (`AddPinPage`). The overlay is positioned absolutely within HomePage's relative container with a backdrop dismiss.
 
-**Editor constraints:** Floating pins use `react-rnd` with `bounds="parent"` so they stay inside the slate. The pin picker popup (`PinsPopup`) positions relative to the editor container, not the viewport. Home and logout live in the sidebar, not in `EditorToolbar`.
+**Editor constraints:** The format menu (`EditorFormatMenu`) positions relative to the editor container. Document font size is applied via `.editor-font-wrapper` with a CSS transition. Active bold/italic shows as B/I labels in the sidebar above Home. Home and logout live in the sidebar, not in `EditorToolbar`.
 
 ### State and data fetching
 
@@ -172,9 +172,10 @@ Theme is user-controlled via the toggle, separate from the OS `prefers-color-sch
 - **Theme** — `ThemeContext` holds `light` / `dark` preference; persists to `localStorage` and drives slate CSS variables.
 - **Server data** — TanStack Query for notes and pins lists (`useQuery` in page components).
 - **Editor state** — Custom hooks isolate concerns:
-  - `useNote` — fetch/save a single note, owns the `contentEditable` ref
+  - `useNote` — fetch/save a single note (content + `font_size_px`), loads into Tiptap
   - `useAutoSave` — debounced save (1 s)
-  - `usePins` — pin picker popup and in-session floating pin positions
+  - `useEditorFormatMenu` — slash format menu open/close state
+  - `EditorFormatContext` — bold/italic active state for sidebar indicators
 
 ### API client
 
@@ -247,15 +248,16 @@ sequenceDiagram
     DB-->>UI: { status, pin }
 ```
 
-### Pin insertion in editor
+### Format menu in editor
 
-This flow is entirely client-side after the initial pin list fetch:
+1. User types `/` → `slashFormatMenu` opens `EditorFormatMenu` at cursor
+2. A⁻/A⁺ adjusts `font_size_px` (14–28, step 2) on the whole document; saved immediately
+3. B/I toggles inline marks; menu closes and `/` trigger is removed
+4. Escape, backdrop click, or Ctrl+C dismisses the menu
 
-1. User types `/` → `usePins.openPinsPopup` at cursor position
-2. `getPins()` loads the user's saved pins
-3. User selects a pin → added to `floatingPins` state with default x/y/width/height
-4. `FloatingPin` renders via `react-rnd` (draggable, resizable)
-5. Positions are **not** sent to the server — they exist only for the current editor session
+### Pin insertion in editor (removed)
+
+Previously pins could be inserted via `/`; this flow was replaced by the format menu. Pins are still managed via Home and My Pins.
 
 ## Database schema
 
@@ -274,6 +276,7 @@ Migrations live in [`supabase/migrations/`](../supabase/migrations/). Apply them
 | `user_id` | Owner FK |
 | `title` | Note title |
 | `content` | HTML string |
+| `font_size_px` | Document-wide body font size (14–28, default 18) |
 | `updated_at` | Sort order (desc) |
 
 **pins**

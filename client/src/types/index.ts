@@ -16,6 +16,7 @@ export type Note = {
     id: string;
     title: string;
     content: string | null;
+    font_size_px: number;
     created_at: string | null;
     updated_at: string | null;
 }

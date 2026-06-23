@@ -74,9 +74,9 @@ Organized by feature area. Each folder has an `index.ts` barrel export.
 
 Custom hooks that own async logic and state for complex views:
 
-- `useNote` — load/save a note, holds the editor DOM ref
+- `useNote` — load/save a note (content + `font_size_px`), syncs with Tiptap
 - `useAutoSave` — debounced save scheduling
-- `usePins` — pin picker popup and floating pin session state
+- `useEditorFormatMenu` — slash format menu open/close state
 
 ### `src/services/`
 
@@ -92,14 +92,31 @@ Auth calls (`login`, `register`) live in `AuthContext` instead of a separate ser
 
 | File | Purpose |
 |------|---------|
-| `getCleanHTML.ts` | Sanitize editor HTML via DOMPurify before save |
-| `applyMarkdownPattern.ts` | Convert `**bold**`, `*italic*`, `` `code` `` shortcuts inline |
+| `getCleanHTML.ts` | Sanitize Tiptap HTML output via DOMPurify before save |
+
+### `src/extensions/`
+
+| File | Purpose |
+|------|---------|
+| `slashFormatMenu.ts` | Tiptap Suggestion extension — `/` opens the format menu |
+
+### `src/context/`
+
+| File | Purpose |
+|------|---------|
+| `EditorFormatContext.tsx` | Bold/italic active state for sidebar indicators |
+
+### `src/lib/`
+
+| File | Purpose |
+|------|---------|
+| `editorExtensions.ts` | Trimmed StarterKit + Placeholder + pin slash command |
 
 ### `src/constants/`
 
 | File | Purpose |
 |------|---------|
-| `editor.ts` | Auto-save delay, markdown regex patterns |
+| `editor.ts` | Auto-save delay, font size constants (min/max/step/default) |
 | `theme.ts` | Color themes for floating pin cards |
 
 ## `server/` — Flask API

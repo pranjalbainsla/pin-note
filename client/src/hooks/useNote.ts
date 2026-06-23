@@ -1,29 +1,46 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import type { Editor } from "@tiptap/react";
 import { getNoteById, updateNote } from "@/services/notesService";
 import getCleanHTML from "@/utils/getCleanHTML";
+import {
+  clampFontSizePx,
+  DEFAULT_FONT_SIZE_PX,
+} from "@/constants/editor";
 
 interface UseNoteReturn {
   title: string;
   setTitle: React.Dispatch<React.SetStateAction<string>>;
+  fontSizePx: number;
+  setFontSizePx: React.Dispatch<React.SetStateAction<number>>;
   isLoading: boolean;
   isSaving: boolean;
   error: string;
-  editorRef: React.RefObject<HTMLDivElement>;
   fetchNote: () => Promise<void>;
   saveNote: () => Promise<void>;
+  saveFontSize: (nextSize: number) => Promise<void>;
 }
 
 /**
  * Owns all state and async logic for a single note.
- * editorRef lives here (not in the component) because it's logically
- * part of note data, not view structure.
+ * Content is loaded into the Tiptap editor via setContent once both
+ * the editor instance and fetched HTML are available.
  */
-export function useNote(noteId: string | undefined): UseNoteReturn {
-  const [title, setTitle]         = useState("");
+export function useNote(
+  noteId: string | undefined,
+  editor: Editor | null,
+): UseNoteReturn {
+  const [title, setTitle] = useState("");
+  const [fontSizePx, setFontSizePx] = useState(DEFAULT_FONT_SIZE_PX);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving]   = useState(false);
-  const [error, setError]         = useState("");
-  const editorRef                 = useRef<HTMLDivElement>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [noteContent, setNoteContent] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!editor || noteContent === null) return;
+    editor.commands.setContent(noteContent, false);
+    setNoteContent(null);
+  }, [editor, noteContent]);
 
   const fetchNote = useCallback(async () => {
     if (!noteId) return;
@@ -31,9 +48,8 @@ export function useNote(noteId: string | undefined): UseNoteReturn {
       setIsLoading(true);
       const { note } = await getNoteById(noteId);
       setTitle(note.title);
-      if (editorRef.current) {
-        editorRef.current.innerHTML = note.content ?? "";
-      }
+      setFontSizePx(clampFontSizePx(note.font_size_px ?? DEFAULT_FONT_SIZE_PX));
+      setNoteContent(note.content ?? "");
     } catch (err) {
       setError("Failed to load note. Please try again later.");
       console.error("Failed to fetch note:", err);
@@ -43,18 +59,48 @@ export function useNote(noteId: string | undefined): UseNoteReturn {
   }, [noteId]);
 
   const saveNote = useCallback(async () => {
-    if (!editorRef.current || !noteId) return;
-    const content = getCleanHTML(editorRef.current);
+    if (!editor || !noteId) return;
+    const content = getCleanHTML(editor.getHTML());
     setIsSaving(true);
     try {
-      await updateNote(noteId, title, content);
+      await updateNote(noteId, title, content, fontSizePx);
     } catch (err) {
       setError("Auto-save failed. Please try again.");
       console.error("Auto-save failed:", err);
     } finally {
       setIsSaving(false);
     }
-  }, [noteId, title]);
+  }, [editor, noteId, title, fontSizePx]);
 
-  return { title, setTitle, isLoading, isSaving, error, editorRef, fetchNote, saveNote };
+  const saveFontSize = useCallback(
+    async (nextSize: number) => {
+      if (!editor || !noteId) return;
+      const clamped = clampFontSizePx(nextSize);
+      setFontSizePx(clamped);
+      const content = getCleanHTML(editor.getHTML());
+      setIsSaving(true);
+      try {
+        await updateNote(noteId, title, content, clamped);
+      } catch (err) {
+        setError("Auto-save failed. Please try again.");
+        console.error("Auto-save failed:", err);
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [editor, noteId, title],
+  );
+
+  return {
+    title,
+    setTitle,
+    fontSizePx,
+    setFontSizePx,
+    isLoading,
+    isSaving,
+    error,
+    fetchNote,
+    saveNote,
+    saveFontSize,
+  };
 }

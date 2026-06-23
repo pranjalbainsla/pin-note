@@ -1,6 +1,6 @@
 from flask import request, Blueprint, g
 from services.notes_service import NotesService
-from repositories.notes_repository import SupabaseNotesRepository
+from repositories.notes_repository import SupabaseNotesRepository, DEFAULT_FONT_SIZE_PX
 
 note_bp = Blueprint("/api/notes", __name__)
 
@@ -27,11 +27,13 @@ def create_note():
 
     title = data.get("title", "")
     content = data.get("content", "")
+    font_size_px = data.get("font_size_px", DEFAULT_FONT_SIZE_PX)
 
     note = notes_service.create_note(
         user_id=g.user.id,
         title=title,
         content=content,
+        font_size_px=font_size_px,
     )
 
     return {"status": "ok", "note": note.to_dict()}, 201
@@ -43,12 +45,14 @@ def update_note(note_id):
 
     title = data.get("title", "")
     content = data.get("content", "")
+    font_size_px = data.get("font_size_px", DEFAULT_FONT_SIZE_PX)
 
     notes_service.update_note(
         note_id=note_id,
         user_id=g.user.id,
         title=title,
         content=content,
+        font_size_px=font_size_px,
     )
 
     return {"status": "ok"}, 200
