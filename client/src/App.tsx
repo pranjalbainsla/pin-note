@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import GuestRoute from "@/components/GuestRoute";
 import AppShell from "@/components/layout/AppShell";
 
 import {
@@ -16,9 +17,23 @@ function App() {
       <AuthProvider>
         <AppShell>
           <Routes>
-            <Route path="/" element={<LoginPage />} />
+            <Route
+              path="/"
+              element={
+                <GuestRoute>
+                  <LoginPage />
+                </GuestRoute>
+              }
+            />
 
-            <Route path="/register" element={<RegisterPage />} />
+            <Route
+              path="/register"
+              element={
+                <GuestRoute>
+                  <RegisterPage />
+                </GuestRoute>
+              }
+            />
             <Route
               path="/home"
               element={
