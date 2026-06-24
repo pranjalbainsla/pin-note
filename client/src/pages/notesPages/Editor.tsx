@@ -97,11 +97,17 @@ export default function Editor() {
     saveNote,
     saveFontSize,
   } = useNote(noteId, editor);
-  const { scheduleAutoSave } = useAutoSave(saveNote, AUTOSAVE_DELAY_MS);
+  const { scheduleAutoSave, flushAutoSave } = useAutoSave(saveNote, AUTOSAVE_DELAY_MS);
 
   useEffect(() => {
     scheduleAutoSaveRef.current = scheduleAutoSave;
   }, [scheduleAutoSave]);
+
+  useEffect(() => {
+    return () => {
+      flushAutoSave();
+    };
+  }, [flushAutoSave]);
 
   useEffect(() => {
     if (editor) {

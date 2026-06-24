@@ -1,5 +1,6 @@
 from repositories.notes_repository import INotesRepository, DEFAULT_FONT_SIZE_PX
-from exceptions import ForbiddenError
+from exceptions import ForbiddenError, ValidationError
+from utils.note_content import is_note_empty
 
 
 class NotesService:
@@ -14,6 +15,8 @@ class NotesService:
         font_size_px: int = DEFAULT_FONT_SIZE_PX,
     ):
         """Create a new note for the user"""
+        if is_note_empty(title, content):
+            raise ValidationError("Note must have a title or content")
         return self.note_repo.create_note(user_id, title, content, font_size_px)
 
     def get_notes_by_user_id(self, user_id: str):

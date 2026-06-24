@@ -1,36 +1,20 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createNote } from "@/services/notesService";
+import { NEW_NOTE_ID } from "@/constants/editor";
 import AddPinPage from "./AddPinPage";
 
 export default function HomePage() {
   const navigate = useNavigate();
   const [showAddPin, setShowAddPin] = useState(false);
-  const [creating, setCreating] = useState(false);
-
-  const handleCreateNote = async () => {
-    try {
-      setCreating(true);
-
-      const response = await createNote("", "");
-
-      navigate(`/editor/${response.note.id}`);
-    } catch (err) {
-      console.error("Failed to create note:", err);
-    } finally {
-      setCreating(false);
-    }
-  };
 
   return (
     <div className="relative flex flex-1 flex-col items-center justify-center min-h-0 overflow-hidden">
       <div className="flex flex-col gap-4">
         <button
-          onClick={handleCreateNote}
-          disabled={creating}
+          onClick={() => navigate(`/editor/${NEW_NOTE_ID}`)}
           className="px-6 py-3 bg-[var(--slate-surface-text)] text-[var(--slate-surface)] rounded-2xl shadow-[var(--slate-shadow)] hover:scale-[1.02] transition"
         >
-          {creating ? "Creating..." : "Create a note"}
+          Create a note
         </button>
 
         <button

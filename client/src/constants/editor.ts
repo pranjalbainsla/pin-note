@@ -1,3 +1,5 @@
+export const NEW_NOTE_ID = "new";
+
 export const AUTOSAVE_DELAY_MS = 1000;
 
 export const DEFAULT_FONT_SIZE_PX = 18;

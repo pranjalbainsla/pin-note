@@ -18,11 +18,18 @@ export function useAutoSave(saveFn: () => void, delayMs: number) {
     timeoutRef.current = setTimeout(() => saveFnRef.current(), delayMs);
   }, [delayMs]);
 
+  const flushAutoSave = useCallback(() => {
+    if (!timeoutRef.current) return;
+    clearTimeout(timeoutRef.current);
+    timeoutRef.current = null;
+    saveFnRef.current();
+  }, []);
+
   useEffect(() => {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, []);
 
-  return { scheduleAutoSave: schedule };
+  return { scheduleAutoSave: schedule, flushAutoSave };
 }
