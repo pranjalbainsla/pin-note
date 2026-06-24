@@ -12,7 +12,7 @@ import Editor from "@/pages/notesPages/Editor";
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter useTransitions={false}>
       <AuthProvider>
         <AppShell>
           <Routes>

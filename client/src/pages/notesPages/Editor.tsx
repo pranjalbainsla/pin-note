@@ -117,19 +117,20 @@ export default function Editor() {
     if (!editor || !editorFormat) return;
 
     const syncFormatState = () => {
-      editorFormat.setFormatState({
-        isBold: editor.isActive("bold"),
-        isItalic: editor.isActive("italic"),
-      });
+      const isBold = editor.isActive("bold");
+      const isItalic = editor.isActive("italic");
+      editorFormat.setFormatState((prev) =>
+        prev.isBold === isBold && prev.isItalic === isItalic
+          ? prev
+          : { isBold, isItalic },
+      );
     };
 
     syncFormatState();
     editor.on("selectionUpdate", syncFormatState);
-    editor.on("transaction", syncFormatState);
 
     return () => {
       editor.off("selectionUpdate", syncFormatState);
-      editor.off("transaction", syncFormatState);
       resetEditorFormatState(editorFormat.setFormatState);
     };
   }, [editor, editorFormat]);

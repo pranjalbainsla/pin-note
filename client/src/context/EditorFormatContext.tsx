@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode, useState } from "react";
+import { createContext, useContext, type ReactNode, useState, type Dispatch, type SetStateAction } from "react";
 
 export interface EditorFormatState {
   isBold: boolean;
@@ -7,7 +7,7 @@ export interface EditorFormatState {
 
 interface EditorFormatContextValue {
   formatState: EditorFormatState;
-  setFormatState: (state: EditorFormatState) => void;
+  setFormatState: Dispatch<SetStateAction<EditorFormatState>>;
 }
 
 const defaultState: EditorFormatState = { isBold: false, isItalic: false };
