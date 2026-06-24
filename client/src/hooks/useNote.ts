@@ -52,7 +52,7 @@ export function useNote(
       return;
     }
 
-    persistedNoteIdRef.current = isDraft ? null : (noteId ?? null);
+    persistedNoteIdRef.current = null;
     setTitle("");
     setFontSizePx(DEFAULT_FONT_SIZE_PX);
     setError("");
