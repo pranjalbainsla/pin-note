@@ -1,7 +1,15 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import type { User, AuthContextType } from "@/types";
 import { API_BASE_URL } from "@/config";
+import {
+  clearAuth,
+  getAccessToken,
+  getRefreshToken,
+  isAccessTokenExpired,
+  refreshAccessToken,
+  setTokens,
+} from "@/services/authStorage";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -17,18 +25,108 @@ function getStoredUser(): User | null {
   }
 }
 
+function hasStoredSession(): boolean {
+  return Boolean(getAccessToken() || getRefreshToken());
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(getStoredUser);
-  const [token, setToken] = useState<string | null>(() =>
-    localStorage.getItem("token"),
-  );
+  const [token, setToken] = useState<string | null>(() => getAccessToken());
   const [isLoading, setIsLoading] = useState(false);
+  const [isBootstrapping, setIsBootstrapping] = useState(hasStoredSession);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const bootstrapSession = async () => {
+      const refreshToken = getRefreshToken();
+      if (!refreshToken) {
+        if (!cancelled) {
+          setIsBootstrapping(false);
+        }
+        return;
+      }
+
+      const accessToken = getAccessToken();
+      if (accessToken && !isAccessTokenExpired(accessToken)) {
+        if (!cancelled) {
+          setIsBootstrapping(false);
+        }
+        return;
+      }
+
+      const newToken = await refreshAccessToken();
+      if (cancelled) {
+        return;
+      }
+
+      if (!newToken) {
+        clearAuth();
+        setUser(null);
+        setToken(null);
+      } else {
+        setToken(newToken);
+      }
+
+      setIsBootstrapping(false);
+    };
+
+    bootstrapSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const syncFromStorage = () => {
+      setToken(getAccessToken());
+      setUser(getStoredUser());
+    };
+
+    const handleCleared = () => {
+      setUser(null);
+      setToken(null);
+      setError(null);
+    };
+
+    const handleStorage = (event: StorageEvent) => {
+      if (
+        event.key === "token" ||
+        event.key === "refresh_token" ||
+        event.key === "user"
+      ) {
+        syncFromStorage();
+      }
+    };
+
+    window.addEventListener("auth:tokens-updated", syncFromStorage);
+    window.addEventListener("auth:cleared", handleCleared);
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      window.removeEventListener("auth:tokens-updated", syncFromStorage);
+      window.removeEventListener("auth:cleared", handleCleared);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
+
+  const persistSession = (session: {
+    user: User;
+    token: string;
+    refresh_token: string;
+  }) => {
+    setUser(session.user);
+    setToken(session.token);
+    setTokens(session.token, session.refresh_token);
+    localStorage.setItem("user", JSON.stringify(session.user));
+  };
 
   const authenticate = async (
     endpoint: "login" | "register",
     email: string,
-    password: string
+    password: string,
   ) => {
     setIsLoading(true);
     setError(null);
@@ -48,12 +146,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(data.message || "Login failed");
       }
 
-      setUser(data.user);
-      setToken(data.token);
+      if (!data.token || !data.refresh_token) {
+        throw new Error("Authentication response was incomplete");
+      }
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-
+      persistSession(data);
     } catch (err) {
       console.error("Authentication error:", err);
 
@@ -77,13 +174,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return authenticate("register", email, password);
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const accessToken = getAccessToken();
+
+    if (accessToken) {
+      try {
+        await fetch(`${API_BASE_URL}/auth/logout`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+      } catch {
+        // Local logout still proceeds if the server is unreachable.
+      }
+    }
+
+    clearAuth();
     setUser(null);
     setToken(null);
     setError(null);
-
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
   };
 
   return (
@@ -92,11 +202,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         token,
         isLoading,
+        isBootstrapping,
         error,
         login,
         register,
         logout,
-        isAuthenticated: !!token,
+        isAuthenticated: Boolean(token || getRefreshToken()),
       }}
     >
       {children}

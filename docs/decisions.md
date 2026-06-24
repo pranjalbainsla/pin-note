@@ -98,18 +98,19 @@ This document records architectural choices **inferred from the current codebase
 
 ---
 
-## JWT in localStorage with Bearer header
+## JWT and refresh tokens in localStorage with Bearer header
 
-**Decision:** Store the access token and user object in `localStorage`; attach `Authorization: Bearer` on authenticated requests.
+**Decision:** Store the access token, refresh token, and user object in `localStorage`; attach `Authorization: Bearer` on authenticated requests. Refresh the access token automatically when it expires.
 
-**Why it appears to have been chosen:** `AuthContext` writes to `localStorage` on login/register. `apiFetch` reads the token and sets the header. On 401, both are cleared and the user is redirected to login.
+**Why it appears to have been chosen:** `AuthContext` writes tokens to `localStorage` on login/register. `authStorage` centralizes token reads/writes and deduped refresh calls. `apiFetch` reads the access token and, on `401`, exchanges the refresh token via `POST /auth/refresh` before retrying. `bootstrapSession` in `AuthContext` silently refreshes on app load so protected routes do not flash errors. Logout calls `POST /auth/logout` to revoke the server session, then clears storage.
 
 **Tradeoffs:**
 
 - (+) Simple, stateless API — no cookies or server sessions
 - (+) Works with CORS from a separate Vite dev origin
+- (+) Users stay logged in across access token expiry until explicit logout
 - (−) localStorage is accessible to XSS — no httpOnly cookie protection
-- (−) No refresh-token flow; expired tokens require re-login
+- (−) Refresh token rotation requires always persisting the latest refresh token; multiple tabs can race unless synced via storage events
 
 ---
 

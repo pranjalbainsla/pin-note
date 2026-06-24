@@ -51,13 +51,13 @@ client/
 | `errors/ErrorFallback.tsx` | react-error-boundary fallback UI |
 | `home/FolderPanel.tsx` | Modal overlay (`SlateSurface` variant `modal`) for home sub-views (notes list, pins gallery, add pin) |
 | `pins/PinCard.tsx` | Pin card component (present in codebase; not currently wired into active pages) |
-| `ProtectedRoute.tsx` | Redirects unauthenticated users to login |
+| `ProtectedRoute.tsx` | Redirects unauthenticated users to login; waits during session bootstrap |
 
 ### `src/context/`
 
 | File | Purpose |
 |------|---------|
-| `AuthContext.tsx` | User session, login/register/logout, `localStorage` token persistence |
+| `AuthContext.tsx` | User session, login/register/logout, bootstrap refresh on load, `localStorage` persistence |
 | `ThemeContext.tsx` | Manual light/dark theme, `localStorage` persistence, `data-theme` on `<html>` |
 
 ### `src/pages/`
@@ -82,11 +82,12 @@ Custom hooks that own async logic and state for complex views:
 
 Thin wrappers around the REST API:
 
-- `apiFetch.ts` — authenticated fetch with 401 handling
+- `apiFetch.ts` — authenticated fetch with refresh-on-401 and retry
+- `authStorage.ts` — access/refresh token storage, deduped refresh, cross-tab sync events
 - `notesService.ts` — notes CRUD endpoints
 - `pinsService.ts` — pins list and create endpoints
 
-Auth calls (`login`, `register`) live in `AuthContext` instead of a separate service file.
+Auth calls (`login`, `register`, `logout`) live in `AuthContext`. Token refresh lives in `authStorage` (called by `apiFetch` and `AuthContext` bootstrap).
 
 ### `src/utils/`
 
@@ -144,7 +145,7 @@ One blueprint per resource. Each file wires a repository + service singleton and
 
 | File | Endpoints |
 |------|-----------|
-| `auth_routes.py` | `/register`, `/login` |
+| `auth_routes.py` | `/register`, `/login`, `/refresh`, `/logout` |
 | `notes_routes.py` | `/getAll`, `/get/<id>`, `/create`, `/update/<id>` |
 | `pins_routes.py` | `/getAll`, `/create` |
 

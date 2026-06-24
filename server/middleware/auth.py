@@ -1,7 +1,12 @@
 from flask import request, g
 from utils.supabase_client import supabase
 
-public_routes = ["/api/auth/login", "/api/auth/register"]
+public_routes = [
+    "/api/auth/login",
+    "/api/auth/register",
+    "/api/auth/refresh",
+    "/api/auth/logout",
+]
 
 def auth_middleware():
     # Allow preflight requests

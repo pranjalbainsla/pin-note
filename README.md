@@ -157,7 +157,7 @@ Pin creation additionally calls:
     YouTube Transcript API  →  Gemini  →  pins table
 ```
 
-Protected routes require an `Authorization: Bearer <token>` header. Tokens are issued at login/register and stored in `localStorage` on the client.
+Protected routes require an `Authorization: Bearer <access_token>` header. Login and register return access and refresh tokens, stored in `localStorage`. The client refreshes expired access tokens automatically; users are logged out only on explicit logout or when refresh fails.
 
 For deeper detail, see:
 
@@ -170,7 +170,7 @@ For deeper detail, see:
 
 ### Authentication
 
-Email/password signup and login via Supabase Auth. JWT access tokens are returned to the client and validated on every protected request.
+Email/password signup and login via Supabase Auth. JWT access tokens are validated on every protected request; refresh tokens keep sessions alive across access token expiry until the user logs out.
 
 ### Notes
 

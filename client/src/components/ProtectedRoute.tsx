@@ -7,7 +7,11 @@ type Props = {
 };
 
 export default function ProtectedRoute({ children }: Props) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isBootstrapping } = useAuth();
+
+  if (isBootstrapping) {
+    return null;
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/" replace />;

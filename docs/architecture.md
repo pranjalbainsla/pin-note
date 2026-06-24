@@ -50,7 +50,7 @@ Thin HTTP handlers. Each blueprint parses the request, reads `g.user` (set by au
 
 | Blueprint | Prefix | Responsibility |
 |-----------|--------|----------------|
-| `auth_routes` | `/api/auth` | Register, login |
+| `auth_routes` | `/api/auth` | Register, login, refresh, logout |
 | `notes_routes` | `/api/notes` | CRUD for notes |
 | `pins_routes` | `/api/pins` | List and create pins |
 
@@ -58,7 +58,7 @@ Services and repositories are instantiated once at module load time in each rout
 
 ### Middleware (`server/middleware/auth.py`)
 
-Runs on every request via `app.before_request`. Skips `OPTIONS` preflight and public auth routes (`/api/auth/login`, `/api/auth/register`). For all other paths under `/api/*`, validates the `Authorization: Bearer` token with Supabase and attaches the user to Flask's `g.user`.
+Runs on every request via `app.before_request`. Skips `OPTIONS` preflight and public auth routes (`/api/auth/login`, `/api/auth/register`, `/api/auth/refresh`, `/api/auth/logout`). For all other paths under `/api/*`, validates the `Authorization: Bearer` token with Supabase and attaches the user to Flask's `g.user`.
 
 ### Services (`server/services/`)
 
@@ -66,7 +66,7 @@ Business logic and authorization rules. Services never execute SQL directly — 
 
 | Service | Key behavior |
 |---------|--------------|
-| `AuthService` | Password length, email format, duplicate-email checks before delegating to Supabase Auth |
+| `AuthService` | Password length, email format, duplicate-email checks; refresh and logout via repository |
 | `NotesService` | Ownership check on `get_note_by_id` (raises `ForbiddenError` if `user_id` mismatch) |
 | `PinsService` | YouTube URL validation, transcript fetch, Gemini summarization, then persist via repository |
 
@@ -103,7 +103,7 @@ Plain Python classes (`User`, `Note`, `Pin`) with a `to_dict()` serializer. They
 | `/mypins` | Pins gallery | Protected |
 | `/editor/:noteId` | Note editor | Protected |
 
-`ProtectedRoute` redirects unauthenticated users to `/`.
+`ProtectedRoute` redirects unauthenticated users to `/`. While `AuthContext` bootstraps a stored session (silent refresh on load), protected routes render nothing until bootstrapping completes.
 
 All routes render inside `AppShell`, which provides the app-wide layout (themed background, fixed slate, route-aware sidebar). Individual pages own only their inner content.
 
@@ -168,7 +168,7 @@ Theme is user-controlled via the toggle, separate from the OS `prefers-color-sch
 
 ### State and data fetching
 
-- **Auth** — `AuthContext` holds `user`, `token`, and auth methods; persists to `localStorage`.
+- **Auth** — `AuthContext` holds `user`, `token`, and auth methods; `authStorage` persists access/refresh tokens to `localStorage`. On app load, `bootstrapSession` silently refreshes an expired access token. Logout revokes the server session and clears storage.
 - **Theme** — `ThemeContext` holds `light` / `dark` preference; persists to `localStorage` and drives slate CSS variables.
 - **Server data** — TanStack Query for notes and pins lists (`useQuery` in page components).
 - **Editor state** — Custom hooks isolate concerns:
@@ -179,9 +179,7 @@ Theme is user-controlled via the toggle, separate from the OS `prefers-color-sch
 
 ### API client
 
-`apiFetch` attaches the Bearer token, handles 401 by clearing storage and redirecting to login, and throws on non-OK responses with the server's `message` field.
-
-Auth endpoints (`login`, `register`) use raw `fetch` in `AuthContext` instead of `apiFetch` because they do not require a token.
+`apiFetch` attaches the Bearer token, retries once after refreshing on `401`, and only clears storage and redirects to login when refresh fails. Auth endpoints (`login`, `register`, `logout`) use raw `fetch` in `AuthContext`; refresh uses `authStorage` directly to avoid recursion through `apiFetch`.
 
 ## Data flow
 
@@ -197,11 +195,31 @@ sequenceDiagram
     UI->>Ctx: login(email, password)
     Ctx->>API: POST { email, password }
     API->>Supa: sign_in_with_password
-    Supa-->>API: user + access_token
-    API-->>Ctx: { user, token }
-    Ctx->>Ctx: localStorage.setItem(token, user)
+    Supa-->>API: user + access_token + refresh_token
+    API-->>Ctx: { user, token, refresh_token }
+    Ctx->>Ctx: localStorage.setItem(token, refresh_token, user)
     UI->>UI: navigate /home
 ```
+
+### Session refresh
+
+```mermaid
+sequenceDiagram
+    participant App as AuthContext / apiFetch
+    participant Store as authStorage
+    participant API as /api/auth/refresh
+    participant Supa as Supabase Auth API
+
+    App->>Store: access token expired?
+    Store->>API: POST { refresh_token }
+    API->>Supa: token?grant_type=refresh_token
+    Supa-->>API: new access_token + refresh_token
+    API-->>Store: { token, refresh_token }
+    Store->>Store: update localStorage
+    App->>App: retry original request or continue
+```
+
+Users stay logged in across access token expiry and page reloads until they click logout or the refresh token is invalid.
 
 ### Note editing
 
@@ -326,7 +344,7 @@ All routes render inside `AppShell` → `SlateSurface` (`page`). Pages supply on
 | Context | Shape |
 |---------|-------|
 | Success (notes/pins) | `{ status: "ok", notes/pins/note: ... }` |
-| Success (auth) | `{ user, token }` (no `status` field) |
+| Success (auth) | `{ user, token, refresh_token }` or `{ token, refresh_token }` (no `status` field) |
 | AppError | `{ status: "error", message }` |
 | Auth middleware failure | `{ message }` (no `status` field) |
 

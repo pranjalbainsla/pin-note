@@ -36,11 +36,12 @@ class AuthService:
             raise ConflictError("User with this email already exists")
         
         # Delegate to repository (which handles Supabase auth)
-        user, token = self.user_repo.create_user_with_auth(email, password)
+        user, access_token, refresh_token = self.user_repo.create_user_with_auth(email, password)
         
         return {
             "user": user.to_dict(),
-            "token": token
+            "token": access_token,
+            "refresh_token": refresh_token,
         }
 
     def login(self, email: str, password: str):
@@ -62,9 +63,28 @@ class AuthService:
             raise ValidationError("Invalid email format")
         
         # Delegate to repository (which handles Supabase auth)
-        user, token = self.user_repo.authenticate_user(email, password)
+        user, access_token, refresh_token = self.user_repo.authenticate_user(email, password)
         
         return {
             "user": user.to_dict(),
-            "token": token
+            "token": access_token,
+            "refresh_token": refresh_token,
         }
+
+    def refresh(self, refresh_token: str):
+        if not refresh_token:
+            raise ValidationError("Refresh token is required")
+
+        access_token, new_refresh_token = self.user_repo.refresh_session(refresh_token)
+
+        return {
+            "token": access_token,
+            "refresh_token": new_refresh_token,
+        }
+
+    def logout(self, access_token: str):
+        if not access_token:
+            raise ValidationError("Access token is required")
+
+        self.user_repo.revoke_session(access_token)
+        return {"message": "Logged out"}
