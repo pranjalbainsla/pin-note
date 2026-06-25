@@ -16,7 +16,6 @@ interface UseNoteReturn {
   fontSizePx: number;
   setFontSizePx: React.Dispatch<React.SetStateAction<number>>;
   isLoading: boolean;
-  isSaving: boolean;
   error: string;
   fetchNote: () => Promise<void>;
   saveNote: () => Promise<void>;
@@ -38,7 +37,6 @@ export function useNote(
   const [title, setTitle] = useState("");
   const [fontSizePx, setFontSizePx] = useState(DEFAULT_FONT_SIZE_PX);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [noteContent, setNoteContent] = useState<string | null>(null);
 
@@ -103,7 +101,7 @@ export function useNote(
       const effectiveId =
         persistedNoteIdRef.current ?? (isDraft ? null : noteId);
 
-      setIsSaving(true);
+      setError("");
       try {
         if (!effectiveId) {
           const { note } = await createNote(title, content, nextFontSizePx);
@@ -115,8 +113,6 @@ export function useNote(
       } catch (err) {
         setError("Auto-save failed. Please try again.");
         console.error("Auto-save failed:", err);
-      } finally {
-        setIsSaving(false);
       }
     },
     [editor, noteId, isDraft, title, navigate],
@@ -142,7 +138,6 @@ export function useNote(
     fontSizePx,
     setFontSizePx,
     isLoading,
-    isSaving,
     error,
     fetchNote,
     saveNote,

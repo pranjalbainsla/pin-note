@@ -160,7 +160,7 @@ Theme is user-controlled via the toggle, separate from the OS `prefers-color-sch
 | `/home` | Centered "Create a note" and "Add a pin" buttons |
 | `/mynotes` | Full-page scrollable notes grid; card click opens editor |
 | `/mypins` | Full-page scrollable pins gallery |
-| `/editor/:noteId` | Title input, Tiptap `NoteEditor`, status toolbar (saving/error only) |
+| `/editor/:noteId` | Title input, Tiptap `NoteEditor`, error-only status toolbar |
 
 **Modal overlays:** `FolderPanel` uses `SlateSurface` variant `modal` only for the Add Pin flow on HomePage (`AddPinPage`). The overlay is positioned absolutely within HomePage's relative container with a backdrop dismiss.
 

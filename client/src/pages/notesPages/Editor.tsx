@@ -91,7 +91,6 @@ export default function Editor() {
     setTitle,
     fontSizePx,
     isLoading,
-    isSaving,
     error: noteError,
     fetchNote,
     saveNote,
@@ -212,7 +211,7 @@ export default function Editor() {
       className="relative flex flex-1 min-h-0 overflow-auto px-6 py-10"
     >
       <div className="max-w-3xl mx-auto w-full">
-        <EditorToolbar isSaving={isSaving} error={noteError} />
+        <EditorToolbar error={noteError} />
 
         <input
           type="text"
