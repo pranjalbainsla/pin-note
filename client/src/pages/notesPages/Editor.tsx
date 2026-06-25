@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useEditor, type Editor as TiptapEditor } from "@tiptap/react";
 import type { Range } from "@tiptap/core";
+import { useAuth } from "@/context/AuthContext";
 import { useNote } from "@/hooks/useNote";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { useEditorFormatMenu } from "@/hooks/useEditorFormatMenu";
@@ -26,6 +27,7 @@ export default function Editor() {
   const containerRef = useRef<HTMLDivElement>(null);
   const suggestionRangeRef = useRef<Range | null>(null);
   const scheduleAutoSaveRef = useRef<() => void>(() => {});
+  const persistLocalDraftRef = useRef<() => void>(() => {});
 
   const editorFormat = useEditorFormat();
   const {
@@ -34,6 +36,8 @@ export default function Editor() {
     openFormatMenu,
     closeFormatMenu,
   } = useEditorFormatMenu();
+
+  const { user } = useAuth();
 
   const openFormatMenuRef = useRef(openFormatMenu);
   const closeFormatMenuRef = useRef(closeFormatMenu);
@@ -83,7 +87,10 @@ export default function Editor() {
         class: EDITOR_CLASS,
       },
     },
-    onUpdate: () => scheduleAutoSaveRef.current(),
+    onUpdate: () => {
+      persistLocalDraftRef.current();
+      scheduleAutoSaveRef.current();
+    },
   });
 
   const {
@@ -95,12 +102,19 @@ export default function Editor() {
     fetchNote,
     saveNote,
     saveFontSize,
-  } = useNote(noteId, editor);
+    persistLocalDraft,
+  } = useNote(noteId, editor, user?.id);
   const { scheduleAutoSave, flushAutoSave } = useAutoSave(saveNote, AUTOSAVE_DELAY_MS);
 
   useEffect(() => {
     scheduleAutoSaveRef.current = scheduleAutoSave;
   }, [scheduleAutoSave]);
+
+  useEffect(() => {
+    persistLocalDraftRef.current = () => {
+      void persistLocalDraft();
+    };
+  }, [persistLocalDraft]);
 
   useEffect(() => {
     return () => {
@@ -192,9 +206,10 @@ export default function Editor() {
   const handleTitleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setTitle(e.target.value);
+      void persistLocalDraft({ title: e.target.value });
       scheduleAutoSave();
     },
-    [setTitle, scheduleAutoSave],
+    [setTitle, persistLocalDraft, scheduleAutoSave],
   );
 
   if (isLoading) {

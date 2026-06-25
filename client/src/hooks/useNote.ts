@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Editor } from "@tiptap/react";
 import { createNote, getNoteById, updateNote } from "@/services/notesService";
+import { upsertDraftFromEditor } from "@/lib/noteDraftStore";
 import getCleanHTML from "@/utils/getCleanHTML";
 import { isNoteEmpty } from "@/utils/isNoteEmpty";
 import {
@@ -20,6 +21,10 @@ interface UseNoteReturn {
   fetchNote: () => Promise<void>;
   saveNote: () => Promise<void>;
   saveFontSize: (nextSize: number) => Promise<void>;
+  persistLocalDraft: (overrides?: {
+    title?: string;
+    fontSizePx?: number;
+  }) => Promise<void>;
 }
 
 /**
@@ -30,6 +35,7 @@ interface UseNoteReturn {
 export function useNote(
   noteId: string | undefined,
   editor: Editor | null,
+  userId: string | undefined,
 ): UseNoteReturn {
   const navigate = useNavigate();
   const persistedNoteIdRef = useRef<string | null>(null);
@@ -62,6 +68,42 @@ export function useNote(
     editor.commands.setContent(noteContent, false);
     setNoteContent(null);
   }, [editor, noteContent]);
+
+  const getEditorSnapshot = useCallback(
+    (nextFontSizePx: number) => {
+      if (!editor) return null;
+      const content = getCleanHTML(editor.getHTML());
+      return { content, fontSizePx: nextFontSizePx };
+    },
+    [editor],
+  );
+
+  const persistLocalDraft = useCallback(
+    async (overrides?: { title?: string; fontSizePx?: number }) => {
+      if (!editor || !noteId || !userId) return;
+
+      const draftTitle = overrides?.title ?? title;
+      const draftFontSizePx = overrides?.fontSizePx ?? fontSizePx;
+      const snapshot = getEditorSnapshot(draftFontSizePx);
+      if (!snapshot) return;
+
+      const { content } = snapshot;
+      if (isNoteEmpty(draftTitle, content)) return;
+
+      const serverNoteId =
+        persistedNoteIdRef.current ?? (isDraft ? null : noteId);
+
+      await upsertDraftFromEditor({
+        userId,
+        noteId,
+        serverNoteId,
+        title: draftTitle,
+        content,
+        fontSizePx: draftFontSizePx,
+      });
+    },
+    [editor, noteId, userId, title, fontSizePx, isDraft, getEditorSnapshot],
+  );
 
   const fetchNote = useCallback(async () => {
     if (!noteId) return;
@@ -142,5 +184,6 @@ export function useNote(
     fetchNote,
     saveNote,
     saveFontSize,
+    persistLocalDraft,
   };
 }
