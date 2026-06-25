@@ -287,6 +287,8 @@ Create a new note for the authenticated user.
 
 Both fields default to `""` if omitted.
 
+**Behavior:** Creates the note and an initial version snapshot (`source: autosave`) via the `create_note_with_version` Postgres RPC.
+
 **Success — 201**
 
 ```json
@@ -306,6 +308,8 @@ Both fields default to `""` if omitted.
 ### PUT `/api/notes/update/:note_id`
 
 Update a note's title and content. Scoped to the authenticated user (`user_id` match in the repository query).
+
+**Behavior:** Before applying changes, snapshots the current note into `note_versions` when `(title, content, font_size_px)` hash changes. Skips the update entirely when the hash is unchanged. Prunes old versions (last 50 and 30 days) after each new snapshot.
 
 **Request body**
 
@@ -329,6 +333,99 @@ Update a note's title and content. Scoped to the authenticated user (`user_id` m
 | Status | Condition |
 |--------|-----------|
 | 404 | Note not found or not owned by user |
+
+---
+
+### GET `/api/notes/versions/:note_id`
+
+List version history for a note. Newest first, up to 50 versions.
+
+**Success — 200**
+
+```json
+{
+  "status": "ok",
+  "versions": [
+    {
+      "id": "uuid",
+      "note_id": "uuid",
+      "title": "My note",
+      "font_size_px": 18,
+      "source": "autosave",
+      "created_at": "2026-06-25T12:00:00Z",
+      "snippet": "Hello world…"
+    }
+  ]
+}
+```
+
+**Errors**
+
+| Status | Condition |
+|--------|-----------|
+| 404 | Note not found |
+| 403 | Note belongs to another user |
+
+---
+
+### GET `/api/notes/version/:note_id/:version_id`
+
+Fetch a full version snapshot (including HTML `content`).
+
+**Success — 200**
+
+```json
+{
+  "status": "ok",
+  "version": {
+    "id": "uuid",
+    "note_id": "uuid",
+    "user_id": "uuid",
+    "title": "My note",
+    "content": "<p>Hello</p>",
+    "font_size_px": 18,
+    "content_hash": "hex",
+    "source": "autosave",
+    "created_at": "2026-06-25T12:00:00Z"
+  }
+}
+```
+
+**Errors**
+
+| Status | Condition |
+|--------|-----------|
+| 404 | Note or version not found |
+| 403 | Note belongs to another user |
+
+---
+
+### POST `/api/notes/restore/:note_id/:version_id`
+
+Restore a note to a previous version. Snapshots the current note first (`source: restore`) so the restore is reversible.
+
+**Success — 200**
+
+```json
+{
+  "status": "ok",
+  "note": {
+    "id": "uuid",
+    "user_id": "uuid",
+    "title": "My note",
+    "content": "<p>Hello</p>",
+    "font_size_px": 18,
+    "updated_at": "2026-06-25T12:05:00Z"
+  }
+}
+```
+
+**Errors**
+
+| Status | Condition |
+|--------|-----------|
+| 404 | Note or version not found |
+| 403 | Note belongs to another user |
 
 ---
 

@@ -1,6 +1,6 @@
 from repositories.notes_repository import INotesRepository, DEFAULT_FONT_SIZE_PX
 from exceptions import ForbiddenError, ValidationError
-from utils.note_content import is_note_empty
+from utils.note_content import is_note_empty, plain_text_snippet
 
 
 class NotesService:
@@ -39,6 +39,27 @@ class NotesService:
         font_size_px: int,
     ):
         """Update a note for a user"""
+        self.get_note_by_id(note_id, user_id)
         return self.note_repo.update_note(
             note_id, user_id, title, content, font_size_px
         )
+
+    def list_note_versions(self, note_id: str, user_id: str):
+        """List versions for a note owned by the user"""
+        self.get_note_by_id(note_id, user_id)
+        versions = self.note_repo.list_versions(note_id, user_id)
+        return [
+            version.to_list_dict(plain_text_snippet(version.content))
+            for version in versions
+        ]
+
+    def get_note_version(self, note_id: str, version_id: str, user_id: str):
+        """Get a single version if the note belongs to the user"""
+        self.get_note_by_id(note_id, user_id)
+        version = self.note_repo.get_version(note_id, version_id, user_id)
+        return version.to_dict()
+
+    def restore_note_version(self, note_id: str, version_id: str, user_id: str):
+        """Restore a note to a previous version"""
+        self.get_note_by_id(note_id, user_id)
+        return self.note_repo.restore_version(note_id, version_id, user_id)

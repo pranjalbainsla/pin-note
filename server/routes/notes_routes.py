@@ -56,3 +56,21 @@ def update_note(note_id):
     )
 
     return {"status": "ok"}, 200
+
+
+@note_bp.route("/versions/<note_id>", methods=["GET"])
+def list_note_versions(note_id):
+    versions = notes_service.list_note_versions(note_id, g.user.id)
+    return {"status": "ok", "versions": versions}, 200
+
+
+@note_bp.route("/version/<note_id>/<version_id>", methods=["GET"])
+def get_note_version(note_id, version_id):
+    version = notes_service.get_note_version(note_id, version_id, g.user.id)
+    return {"status": "ok", "version": version}, 200
+
+
+@note_bp.route("/restore/<note_id>/<version_id>", methods=["POST"])
+def restore_note_version(note_id, version_id):
+    note = notes_service.restore_note_version(note_id, version_id, g.user.id)
+    return {"status": "ok", "note": note.to_dict()}, 200

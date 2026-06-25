@@ -1,15 +1,63 @@
 from abc import ABC, abstractmethod
+from postgrest.exceptions import APIError
 from utils.supabase_client import supabase
 from models.note import Note
+from models.note_version import NoteVersion
 from exceptions import NotFoundError
 
 MIN_FONT_SIZE_PX = 14
 MAX_FONT_SIZE_PX = 28
 DEFAULT_FONT_SIZE_PX = 18
+VERSION_LIST_LIMIT = 50
 
 
 def clamp_font_size_px(size: int) -> int:
     return max(MIN_FONT_SIZE_PX, min(MAX_FONT_SIZE_PX, size))
+
+
+def _note_from_row(note_data: dict) -> Note:
+    return Note(
+        id=note_data["id"],
+        user_id=note_data["user_id"],
+        title=note_data["title"],
+        content=note_data["content"],
+        font_size_px=note_data.get("font_size_px", DEFAULT_FONT_SIZE_PX),
+        updated_at=note_data.get("updated_at"),
+    )
+
+
+def _first_rpc_row(data: list | dict | None) -> dict | None:
+    """PostgREST returns a dict for scalar composite RPC results, a list for setof."""
+    if not data:
+        return None
+    if isinstance(data, dict):
+        return data
+    if isinstance(data, list) and data:
+        return data[0]
+    return None
+
+
+def _version_from_row(version_data: dict) -> NoteVersion:
+    return NoteVersion(
+        id=version_data["id"],
+        note_id=version_data["note_id"],
+        user_id=version_data["user_id"],
+        title=version_data["title"],
+        content=version_data["content"],
+        font_size_px=version_data.get("font_size_px", DEFAULT_FONT_SIZE_PX),
+        content_hash=version_data["content_hash"],
+        source=version_data["source"],
+        created_at=version_data.get("created_at"),
+    )
+
+
+def _raise_not_found_from_rpc(error: APIError) -> None:
+    message = str(error)
+    details = getattr(error, "details", "") or ""
+    combined = f"{message} {details}"
+    if "Note not found" in combined or "Version not found" in combined:
+        raise NotFoundError(combined.strip()) from error
+    raise error
 
 
 class INotesRepository(ABC):
@@ -48,6 +96,21 @@ class INotesRepository(ABC):
         """Update a note."""
         pass
 
+    @abstractmethod
+    def list_versions(self, note_id: str, user_id: str) -> list[NoteVersion]:
+        """List versions for a note."""
+        pass
+
+    @abstractmethod
+    def get_version(self, note_id: str, version_id: str, user_id: str) -> NoteVersion:
+        """Get a single note version."""
+        pass
+
+    @abstractmethod
+    def restore_version(self, note_id: str, version_id: str, user_id: str) -> Note:
+        """Restore a note from a version."""
+        pass
+
 
 class SupabaseNotesRepository(INotesRepository):
     def get_notes_by_user_id(self, user_id: str) -> list[Note]:
@@ -60,17 +123,7 @@ class SupabaseNotesRepository(INotesRepository):
             .execute()
         )
         # TODO: convert low level database exceptions into an AppError
-        return [
-            Note(
-                id=note_data["id"],
-                user_id=note_data["user_id"],
-                title=note_data["title"],
-                content=note_data["content"],
-                font_size_px=note_data.get("font_size_px", DEFAULT_FONT_SIZE_PX),
-                updated_at=note_data.get("updated_at"),
-            )
-            for note_data in response.data
-        ]
+        return [_note_from_row(note_data) for note_data in response.data]
 
     def get_note_by_id(self, note_id: str) -> Note:
         response = (
@@ -83,16 +136,7 @@ class SupabaseNotesRepository(INotesRepository):
         if not response.data:
             raise NotFoundError("Note not found")
 
-        note_data = response.data[0]
-
-        return Note(
-            id=note_data["id"],
-            user_id=note_data["user_id"],
-            title=note_data["title"],
-            content=note_data["content"],
-            font_size_px=note_data.get("font_size_px", DEFAULT_FONT_SIZE_PX),
-            updated_at=note_data.get("updated_at"),
-        )
+        return _note_from_row(response.data[0])
 
     def create_note(
         self,
@@ -101,27 +145,28 @@ class SupabaseNotesRepository(INotesRepository):
         content: str,
         font_size_px: int = DEFAULT_FONT_SIZE_PX,
     ) -> Note:
-        response = (
-            supabase.table("notes")
-            .insert({
-                "user_id": user_id,
-                "title": title,
-                "content": content,
-                "font_size_px": clamp_font_size_px(font_size_px),
-            })
-            .execute()
-        )
+        try:
+            response = supabase.rpc(
+                "create_note_with_version",
+                {
+                    "p_user_id": user_id,
+                    "p_title": title,
+                    "p_content": content,
+                    "p_font_size_px": clamp_font_size_px(font_size_px),
+                    "p_source": "autosave",
+                },
+            ).execute()
+        except APIError as error:
+            _raise_not_found_from_rpc(error)
 
-        note_data = response.data[0]
+        if not response.data:
+            raise NotFoundError("Note not found")
 
-        return Note(
-            id=note_data["id"],
-            user_id=note_data["user_id"],
-            title=note_data["title"],
-            content=note_data["content"],
-            font_size_px=note_data.get("font_size_px", DEFAULT_FONT_SIZE_PX),
-            updated_at=note_data.get("updated_at"),
-        )
+        note_data = _first_rpc_row(response.data)
+        if not note_data:
+            raise NotFoundError("Note not found")
+
+        return _note_from_row(note_data)
 
     def update_note(
         self,
@@ -131,17 +176,73 @@ class SupabaseNotesRepository(INotesRepository):
         content: str,
         font_size_px: int,
     ) -> None:
+        try:
+            supabase.rpc(
+                "update_note_with_version",
+                {
+                    "p_note_id": note_id,
+                    "p_user_id": user_id,
+                    "p_title": title,
+                    "p_content": content,
+                    "p_font_size_px": clamp_font_size_px(font_size_px),
+                    "p_source": "autosave",
+                },
+            ).execute()
+        except APIError as error:
+            _raise_not_found_from_rpc(error)
+
+    def list_versions(self, note_id: str, user_id: str) -> list[NoteVersion]:
         response = (
-            supabase.table("notes")
-            .update({
-                "title": title,
-                "content": content,
-                "font_size_px": clamp_font_size_px(font_size_px),
-            })
-            .eq("id", note_id)
+            supabase.table("note_versions")
+            .select(
+                "id, note_id, user_id, title, content, font_size_px, "
+                "content_hash, source, created_at"
+            )
+            .eq("note_id", note_id)
+            .eq("user_id", user_id)
+            .order("created_at", desc=True)
+            .limit(VERSION_LIST_LIMIT)
+            .execute()
+        )
+
+        return [_version_from_row(version_data) for version_data in response.data]
+
+    def get_version(self, note_id: str, version_id: str, user_id: str) -> NoteVersion:
+        response = (
+            supabase.table("note_versions")
+            .select(
+                "id, note_id, user_id, title, content, font_size_px, "
+                "content_hash, source, created_at"
+            )
+            .eq("id", version_id)
+            .eq("note_id", note_id)
             .eq("user_id", user_id)
             .execute()
         )
 
         if not response.data:
+            raise NotFoundError("Version not found")
+
+        return _version_from_row(response.data[0])
+
+    def restore_version(self, note_id: str, version_id: str, user_id: str) -> Note:
+        try:
+            response = supabase.rpc(
+                "restore_note_version",
+                {
+                    "p_note_id": note_id,
+                    "p_version_id": version_id,
+                    "p_user_id": user_id,
+                },
+            ).execute()
+        except APIError as error:
+            _raise_not_found_from_rpc(error)
+
+        if not response.data:
             raise NotFoundError("Note not found")
+
+        note_data = _first_rpc_row(response.data)
+        if not note_data:
+            raise NotFoundError("Note not found")
+
+        return _note_from_row(note_data)

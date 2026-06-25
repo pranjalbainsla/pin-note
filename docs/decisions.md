@@ -234,3 +234,28 @@ This document records architectural choices **inferred from the current codebase
 - (−) Manual theme (`ThemeContext` + `data-theme`) is separate from OS `prefers-color-scheme` vars still present in `index.css`
 - (−) Home/editor hardcoded hex colors are only partially migrated to slate CSS variables
 
+---
+
+## Append-only note versioning (`note_versions`)
+
+**Decision:** Store immutable note snapshots in `note_versions`. Keep `notes` as the live document. Create/update/restore run through Postgres RPCs in a single transaction.
+
+**Why it was chosen:** Protect against data loss from bugs or bad saves. Client-side Tiptap undo does not survive corruption or cross-device edits. Server-side snapshots with reversible restore give a reliable recovery path.
+
+**Behavior:**
+
+- **Create:** `create_note_with_version` inserts the note and initial version (`source: autosave`).
+- **Update:** `update_note_with_version` snapshots the current row before overwrite when content hash changes; skips no-op saves.
+- **Restore:** `restore_note_version` snapshots current state (`source: restore`), then copies the chosen version onto `notes`.
+- **Retention:** After each version insert, prune rows older than 30 days or beyond the 50 most recent per note.
+- **Backfill:** Existing notes received one `backfill` version at migration time.
+
+**Tradeoffs:**
+
+- (+) Atomic snapshot + update via RPC — no partial failure states
+- (+) Hash dedup avoids duplicate versions on identical auto-save retries
+- (+) Reversible restore preserves pre-restore state as a version
+- (−) Storage grows with edits (mitigated by retention)
+- (−) No editor UI in v1 — APIs only
+- (−) Authorization remains in the Flask service layer (no RLS on `note_versions`)
+
