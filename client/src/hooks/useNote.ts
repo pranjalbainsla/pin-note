@@ -1,10 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Editor } from "@tiptap/react";
-import { createNote, getNoteById, updateNote } from "@/services/notesService";
-import { upsertDraftFromEditor } from "@/lib/noteDraftStore";
+import { getNoteById } from "@/services/notesService";
+import {
+  getDraft,
+  upsertDraftFromEditor,
+} from "@/lib/noteDraftStore";
+import { getDraftNeedsSync, syncDraft } from "@/lib/noteSync";
 import getCleanHTML from "@/utils/getCleanHTML";
 import { isNoteEmpty } from "@/utils/isNoteEmpty";
+import type { NoteDraft } from "@/types/noteDraft";
+import type { Note } from "@/types";
 import {
   clampFontSizePx,
   DEFAULT_FONT_SIZE_PX,
@@ -25,6 +31,35 @@ interface UseNoteReturn {
     title?: string;
     fontSizePx?: number;
   }) => Promise<void>;
+  retryPendingSync: () => Promise<void>;
+}
+
+function draftContentMatches(
+  draft: NoteDraft,
+  title: string,
+  content: string,
+  fontSizePx: number,
+): boolean {
+  return (
+    draft.title === title &&
+    draft.content === content &&
+    draft.fontSizePx === fontSizePx
+  );
+}
+
+function applyDraftToState(
+  draft: NoteDraft,
+  persistedNoteIdRef: React.MutableRefObject<string | null>,
+  setTitle: React.Dispatch<React.SetStateAction<string>>,
+  setFontSizePx: React.Dispatch<React.SetStateAction<number>>,
+  setNoteContent: React.Dispatch<React.SetStateAction<string | null>>,
+) {
+  if (draft.serverNoteId) {
+    persistedNoteIdRef.current = draft.serverNoteId;
+  }
+  setTitle(draft.title);
+  setFontSizePx(clampFontSizePx(draft.fontSizePx));
+  setNoteContent(draft.content);
 }
 
 /**
@@ -106,72 +141,158 @@ export function useNote(
   );
 
   const fetchNote = useCallback(async () => {
-    if (!noteId) return;
-
-    if (isDraft) {
-      setIsLoading(false);
-      return;
-    }
+    if (!noteId || !userId) return;
 
     if (noteId === persistedNoteIdRef.current) {
       setIsLoading(false);
       return;
     }
 
-    try {
-      setIsLoading(true);
-      const { note } = await getNoteById(noteId);
-      persistedNoteIdRef.current = note.id;
-      setTitle(note.title);
-      setFontSizePx(clampFontSizePx(note.font_size_px ?? DEFAULT_FONT_SIZE_PX));
-      setNoteContent(note.content ?? "");
-    } catch (err) {
-      setError("Failed to load note. Please try again later.");
-      console.error("Failed to fetch note:", err);
-    } finally {
-      setIsLoading(false);
+    setIsLoading(true);
+
+    let serverNote: Note | null = null;
+    let fetchFailed = false;
+
+    if (!isDraft) {
+      try {
+        const { note } = await getNoteById(noteId);
+        serverNote = note;
+      } catch (err) {
+        fetchFailed = true;
+        console.error("Failed to fetch note:", err);
+      }
     }
-  }, [noteId, isDraft]);
+
+    const localDraft = await getDraft(userId, noteId);
+
+    if (isDraft) {
+      if (localDraft) {
+        applyDraftToState(
+          localDraft,
+          persistedNoteIdRef,
+          setTitle,
+          setFontSizePx,
+          setNoteContent,
+        );
+      }
+      setIsLoading(false);
+      return;
+    }
+
+    const serverUpdatedAt = serverNote?.updated_at
+      ? Date.parse(serverNote.updated_at)
+      : 0;
+
+    const useLocal =
+      localDraft &&
+      (fetchFailed || localDraft.localUpdatedAt > serverUpdatedAt);
+
+    if (useLocal && localDraft) {
+      if (fetchFailed) {
+        setError("Failed to load note. Showing your local draft.");
+      } else {
+        setError("");
+      }
+      applyDraftToState(
+        localDraft,
+        persistedNoteIdRef,
+        setTitle,
+        setFontSizePx,
+        setNoteContent,
+      );
+    } else if (serverNote) {
+      persistedNoteIdRef.current = serverNote.id;
+      setTitle(serverNote.title);
+      setFontSizePx(
+        clampFontSizePx(serverNote.font_size_px ?? DEFAULT_FONT_SIZE_PX),
+      );
+      setNoteContent(serverNote.content ?? "");
+      setError("");
+
+      await upsertDraftFromEditor({
+        userId,
+        noteId,
+        serverNoteId: serverNote.id,
+        title: serverNote.title,
+        content: serverNote.content ?? "",
+        fontSizePx: clampFontSizePx(
+          serverNote.font_size_px ?? DEFAULT_FONT_SIZE_PX,
+        ),
+        syncStatus: "synced",
+        syncedAt: serverUpdatedAt || Date.now(),
+      });
+    } else {
+      setError("Failed to load note. Please try again later.");
+    }
+
+    setIsLoading(false);
+  }, [noteId, userId, isDraft]);
 
   const persistNote = useCallback(
     async (nextFontSizePx: number) => {
-      if (!editor || !noteId) return;
+      if (!editor || !noteId || !userId) return;
 
-      const content = getCleanHTML(editor.getHTML());
+      const snapshot = getEditorSnapshot(nextFontSizePx);
+      if (!snapshot) return;
+
+      const { content } = snapshot;
       if (isNoteEmpty(title, content)) return;
 
-      const effectiveId =
+      const serverNoteId =
         persistedNoteIdRef.current ?? (isDraft ? null : noteId);
+
+      const existing = await getDraft(userId, noteId);
+      if (
+        existing?.syncStatus === "synced" &&
+        draftContentMatches(existing, title, content, nextFontSizePx)
+      ) {
+        return;
+      }
+
+      const draft = await upsertDraftFromEditor({
+        userId,
+        noteId,
+        serverNoteId,
+        title,
+        content,
+        fontSizePx: nextFontSizePx,
+      });
 
       setError("");
       try {
-        if (!effectiveId) {
-          const { note } = await createNote(title, content, nextFontSizePx);
-          persistedNoteIdRef.current = note.id;
-          navigate(`/editor/${note.id}`, { replace: true });
-        } else {
-          await updateNote(effectiveId, title, content, nextFontSizePx);
+        const synced = await syncDraft(draft, navigate);
+        if (synced.serverNoteId) {
+          persistedNoteIdRef.current = synced.serverNoteId;
         }
       } catch (err) {
         setError("Auto-save failed. Please try again.");
         console.error("Auto-save failed:", err);
       }
     },
-    [editor, noteId, isDraft, title, navigate],
+    [editor, noteId, userId, isDraft, title, navigate, getEditorSnapshot],
   );
 
   const saveNote = useCallback(async () => {
     await persistNote(fontSizePx);
   }, [persistNote, fontSizePx]);
 
+  const retryPendingSync = useCallback(async () => {
+    if (!noteId || !userId) return;
+    const needsSync = await getDraftNeedsSync(userId, noteId);
+    if (needsSync) {
+      await saveNote();
+    }
+  }, [noteId, userId, saveNote]);
+
   const saveFontSize = useCallback(
     async (nextSize: number) => {
       if (!editor || !noteId) return;
       const clamped = clampFontSizePx(nextSize);
       setFontSizePx(clamped);
+      await persistLocalDraft({ fontSizePx: clamped });
       await persistNote(clamped);
     },
-    [editor, noteId, persistNote],
+    [editor, noteId, persistLocalDraft, persistNote],
   );
 
   return {
@@ -185,5 +306,6 @@ export function useNote(
     saveNote,
     saveFontSize,
     persistLocalDraft,
+    retryPendingSync,
   };
 }

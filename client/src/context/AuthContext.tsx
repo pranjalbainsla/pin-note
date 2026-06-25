@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import type { User, AuthContextType } from "@/types";
 import { API_BASE_URL } from "@/config";
+import { deleteAllDraftsForUser } from "@/lib/noteDraftStore";
 import {
   clearAuth,
   getAccessToken,
@@ -176,6 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     const accessToken = getAccessToken();
+    const currentUser = user;
 
     if (accessToken) {
       try {
@@ -187,6 +189,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
       } catch {
         // Local logout still proceeds if the server is unreachable.
+      }
+    }
+
+    if (currentUser) {
+      try {
+        await deleteAllDraftsForUser(currentUser.id);
+      } catch (err) {
+        console.error("Failed to clear note drafts on logout:", err);
       }
     }
 

@@ -173,7 +173,14 @@ Theme is user-controlled via the toggle, separate from the OS `prefers-color-sch
 - **Server data** — TanStack Query for notes and pins lists (`useQuery` in page components).
 - **Editor state** — Custom hooks isolate concerns:
   - `useNote` — fetch/save a single note (content + `font_size_px`), loads into Tiptap
-  - `useAutoSave` — debounced save (1 s)
+  - `useAutoSave` — debounced server sync (1 s)
+  - **Local note drafts** — IndexedDB (`noteDraftStore` via `idb`) keyed by `userId:noteId`:
+    - Immediate write-through on every edit (title, body, font size)
+    - Debounced background sync to the API; `syncStatus`: `pending` → `syncing` → `synced` | `failed`
+    - On load, auto-restore local draft when `localUpdatedAt` is newer than server `updated_at`, or when server fetch fails
+    - `window.online` retries drafts in `pending`/`failed` state
+    - Logout clears all drafts for the user
+    - Multi-tab: last write wins (known limitation)
   - `useEditorFormatMenu` — slash format menu open/close state
   - `EditorFormatContext` — bold/italic active state for sidebar indicators
 

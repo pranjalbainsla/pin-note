@@ -103,6 +103,7 @@ export default function Editor() {
     saveNote,
     saveFontSize,
     persistLocalDraft,
+    retryPendingSync,
   } = useNote(noteId, editor, user?.id);
   const { scheduleAutoSave, flushAutoSave } = useAutoSave(saveNote, AUTOSAVE_DELAY_MS);
 
@@ -118,9 +119,19 @@ export default function Editor() {
 
   useEffect(() => {
     return () => {
-      flushAutoSave();
+      void persistLocalDraft().then(() => {
+        flushAutoSave();
+      });
     };
-  }, [flushAutoSave]);
+  }, [persistLocalDraft, flushAutoSave]);
+
+  useEffect(() => {
+    const onOnline = () => {
+      void retryPendingSync();
+    };
+    window.addEventListener("online", onOnline);
+    return () => window.removeEventListener("online", onOnline);
+  }, [retryPendingSync]);
 
   useEffect(() => {
     if (editor) {

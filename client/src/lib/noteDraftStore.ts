@@ -1,5 +1,9 @@
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
-import { draftKey, type NoteDraft, type SyncStatus } from "@/types/noteDraft";
+import {
+  draftKey,
+  type NoteDraft,
+  type SyncStatus,
+} from "@/types/noteDraft";
 
 const DB_NAME = "better-note-drafts";
 const DB_VERSION = 1;
@@ -105,9 +109,15 @@ export interface UpsertDraftInput {
 export async function upsertDraftFromEditor(
   input: UpsertDraftInput,
 ): Promise<NoteDraft> {
-  const key = draftKey(input.userId, input.noteId);
   const existing = await getDraft(input.userId, input.noteId);
 
+  const contentChanged =
+    !existing ||
+    existing.title !== input.title ||
+    existing.content !== input.content ||
+    existing.fontSizePx !== input.fontSizePx;
+
+  const key = draftKey(input.userId, input.noteId);
   const draft: NoteDraft = {
     key,
     userId: input.userId,
@@ -118,7 +128,9 @@ export async function upsertDraftFromEditor(
     fontSizePx: input.fontSizePx,
     localUpdatedAt: Date.now(),
     syncedAt: input.syncedAt ?? existing?.syncedAt ?? null,
-    syncStatus: input.syncStatus ?? "pending",
+    syncStatus:
+      input.syncStatus ??
+      (contentChanged ? "pending" : (existing?.syncStatus ?? "pending")),
   };
 
   await putDraft(draft);
