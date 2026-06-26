@@ -5,26 +5,18 @@ import { API_BASE_URL } from "@/config";
 import { deleteAllDraftsForUser } from "@/lib/noteDraftStore";
 import {
   clearAuth,
+  ensureStoredUser,
   getAccessToken,
   getRefreshToken,
+  getStoredUser,
   isAccessTokenExpired,
+  parseUserFromAccessToken,
   refreshAccessToken,
+  setStoredUser,
   setTokens,
 } from "@/services/authStorage";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-function getStoredUser(): User | null {
-  const storedUser = localStorage.getItem("user");
-  if (!storedUser) return null;
-
-  try {
-    return JSON.parse(storedUser);
-  } catch {
-    localStorage.removeItem("user");
-    return null;
-  }
-}
 
 function hasStoredSession(): boolean {
   return Boolean(getAccessToken() || getRefreshToken());
@@ -41,16 +33,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     const bootstrapSession = async () => {
-      const refreshToken = getRefreshToken();
-      if (!refreshToken) {
+      if (!hasStoredSession()) {
         if (!cancelled) {
           setIsBootstrapping(false);
         }
         return;
       }
 
-      const accessToken = getAccessToken();
+      let accessToken = getAccessToken();
+
       if (accessToken && !isAccessTokenExpired(accessToken)) {
+        if (!cancelled) {
+          setToken(accessToken);
+          setUser(ensureStoredUser(accessToken));
+          setIsBootstrapping(false);
+        }
+        return;
+      }
+
+      const refreshToken = getRefreshToken();
+      if (!refreshToken) {
         if (!cancelled) {
           setIsBootstrapping(false);
         }
@@ -67,7 +69,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
         setToken(null);
       } else {
+        accessToken = newToken;
         setToken(newToken);
+        setUser(ensureStoredUser(newToken));
       }
 
       setIsBootstrapping(false);
@@ -82,8 +86,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const syncFromStorage = () => {
-      setToken(getAccessToken());
-      setUser(getStoredUser());
+      const accessToken = getAccessToken();
+      setToken(accessToken);
+      setUser(ensureStoredUser(accessToken));
     };
 
     const handleCleared = () => {
@@ -118,10 +123,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     token: string;
     refresh_token: string;
   }) => {
-    setUser(session.user);
+    const user =
+      session.user?.id
+        ? session.user
+        : parseUserFromAccessToken(session.token);
+
+    if (!user) {
+      throw new Error("Authentication response was incomplete");
+    }
+
+    setUser(user);
     setToken(session.token);
     setTokens(session.token, session.refresh_token);
-    localStorage.setItem("user", JSON.stringify(session.user));
+    setStoredUser(user);
   };
 
   const authenticate = async (
@@ -149,6 +163,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!data.token || !data.refresh_token) {
         throw new Error("Authentication response was incomplete");
+      }
+
+      if (!data.user?.id) {
+        const derivedUser = parseUserFromAccessToken(data.token);
+        if (!derivedUser) {
+          throw new Error("Authentication response was incomplete");
+        }
+        data.user = derivedUser;
       }
 
       persistSession(data);

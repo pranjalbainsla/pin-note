@@ -141,7 +141,13 @@ export function useNote(
   );
 
   const fetchNote = useCallback(async () => {
-    if (!noteId || !userId) return;
+    if (!noteId) return;
+
+    if (!userId) {
+      setError("Unable to load user session. Please log in again.");
+      setIsLoading(false);
+      return;
+    }
 
     if (noteId === persistedNoteIdRef.current) {
       setIsLoading(false);

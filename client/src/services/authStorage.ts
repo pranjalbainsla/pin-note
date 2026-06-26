@@ -1,8 +1,61 @@
 import { API_BASE_URL } from "@/config";
+import type { User } from "@/types";
 
 const TOKEN_KEY = "token";
 const REFRESH_TOKEN_KEY = "refresh_token";
 const USER_KEY = "user";
+
+type JwtPayload = {
+  sub?: string;
+  email?: string;
+  user_metadata?: { email?: string };
+};
+
+export function getStoredUser(): User | null {
+  const storedUser = localStorage.getItem(USER_KEY);
+  if (!storedUser) return null;
+
+  try {
+    const parsed = JSON.parse(storedUser) as User;
+    return parsed?.id ? parsed : null;
+  } catch {
+    localStorage.removeItem(USER_KEY);
+    return null;
+  }
+}
+
+export function setStoredUser(user: User): void {
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+}
+
+export function parseUserFromAccessToken(token: string): User | null {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1])) as JwtPayload;
+    if (!payload.sub) return null;
+
+    return {
+      id: payload.sub,
+      email: payload.email ?? payload.user_metadata?.email ?? "",
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Keep local user in sync when tokens exist but the user object was cleared. */
+export function ensureStoredUser(accessToken: string | null): User | null {
+  const stored = getStoredUser();
+  if (stored) return stored;
+
+  if (!accessToken) return null;
+
+  const derived = parseUserFromAccessToken(accessToken);
+  if (derived) {
+    setStoredUser(derived);
+  }
+
+  return derived;
+}
 
 let refreshPromise: Promise<string | null> | null = null;
 
