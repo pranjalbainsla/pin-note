@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 import httpx
 
 from config import Config
-from utils.supabase_client import supabase
+from utils.supabase_client import supabase_auth, supabase_db
 from models.user import User
 from exceptions import (
     InvalidCredentialsError,
@@ -67,7 +67,7 @@ class SupabaseUserRepository(IUserRepository):
     def create_user_with_auth(self, email: str, password: str) -> tuple:
         """Create user via Supabase auth"""
         try:
-            response = supabase.auth.sign_up({
+            response = supabase_auth.auth.sign_up({
                 "email": email,
                 "password": password
             })
@@ -91,7 +91,7 @@ class SupabaseUserRepository(IUserRepository):
     def authenticate_user(self, email: str, password: str) -> tuple:
         """Authenticate user with Supabase auth"""
         try:
-            response = supabase.auth.sign_in_with_password({
+            response = supabase_auth.auth.sign_in_with_password({
                 "email": email,
                 "password": password
             })
@@ -145,7 +145,7 @@ class SupabaseUserRepository(IUserRepository):
     def validate_token(self, token: str) -> User:
         """Validate access token and return authenticated user"""
         try:
-            response = supabase.auth.get_user(token)
+            response = supabase_auth.auth.get_user(token)
         except AuthApiError:
             raise UnauthorizedError("Invalid or expired token")
 
@@ -161,7 +161,7 @@ class SupabaseUserRepository(IUserRepository):
         """Get user by email from Supabase"""
         try:
             response = (
-                supabase
+                supabase_db
                 .table("profiles")
                 .select("id, email")
                 .eq("email", email)

@@ -3,12 +3,15 @@ import { getNotes } from "@/services/notesService";
 import type { Note } from "@/types";
 import { formatNoteDate } from "@/utils/noteDisplay";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/context/AuthContext";
 
 export default function MyNotesPage() {
   const navigate = useNavigate();
+  const { isAuthenticated, isBootstrapping } = useAuth();
   const { data, error, isLoading } = useQuery({
     queryKey: ["notes"],
     queryFn: getNotes,
+    enabled: isAuthenticated && !isBootstrapping,
   });
 
   const notes = data?.notes ?? [];

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from postgrest.exceptions import APIError
-from utils.supabase_client import supabase
+from utils.supabase_client import supabase_db
 from models.note import Note
 from models.note_version import NoteVersion
 from exceptions import NotFoundError
@@ -115,7 +115,7 @@ class INotesRepository(ABC):
 class SupabaseNotesRepository(INotesRepository):
     def get_notes_by_user_id(self, user_id: str) -> list[Note]:
         response = (
-            supabase.table("notes")
+            supabase_db.table("notes")
             .select("id, user_id, title, content, font_size_px, updated_at")
             .eq("user_id", user_id)
             .neq("title", "")
@@ -127,7 +127,7 @@ class SupabaseNotesRepository(INotesRepository):
 
     def get_note_by_id(self, note_id: str) -> Note:
         response = (
-            supabase.table("notes")
+            supabase_db.table("notes")
             .select("id, user_id, title, content, font_size_px, updated_at")
             .eq("id", note_id)
             .execute()
@@ -146,7 +146,7 @@ class SupabaseNotesRepository(INotesRepository):
         font_size_px: int = DEFAULT_FONT_SIZE_PX,
     ) -> Note:
         try:
-            response = supabase.rpc(
+            response = supabase_db.rpc(
                 "create_note_with_version",
                 {
                     "p_user_id": user_id,
@@ -177,7 +177,7 @@ class SupabaseNotesRepository(INotesRepository):
         font_size_px: int,
     ) -> None:
         try:
-            supabase.rpc(
+            supabase_db.rpc(
                 "update_note_with_version",
                 {
                     "p_note_id": note_id,
@@ -193,7 +193,7 @@ class SupabaseNotesRepository(INotesRepository):
 
     def list_versions(self, note_id: str, user_id: str) -> list[NoteVersion]:
         response = (
-            supabase.table("note_versions")
+            supabase_db.table("note_versions")
             .select(
                 "id, note_id, user_id, title, content, font_size_px, "
                 "content_hash, source, created_at"
@@ -209,7 +209,7 @@ class SupabaseNotesRepository(INotesRepository):
 
     def get_version(self, note_id: str, version_id: str, user_id: str) -> NoteVersion:
         response = (
-            supabase.table("note_versions")
+            supabase_db.table("note_versions")
             .select(
                 "id, note_id, user_id, title, content, font_size_px, "
                 "content_hash, source, created_at"
@@ -227,7 +227,7 @@ class SupabaseNotesRepository(INotesRepository):
 
     def restore_version(self, note_id: str, version_id: str, user_id: str) -> Note:
         try:
-            response = supabase.rpc(
+            response = supabase_db.rpc(
                 "restore_note_version",
                 {
                     "p_note_id": note_id,

@@ -1,11 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import PinCard from "@/components/pins/PinCard";
 import { getPins } from "@/services/pinsService";
+import { useAuth } from "@/context/AuthContext";
 
 export default function MyPinsPage() {
+  const { isAuthenticated, isBootstrapping } = useAuth();
   const { data, error, isLoading } = useQuery({
     queryKey: ["pins"],
     queryFn: getPins,
+    enabled: isAuthenticated && !isBootstrapping,
   });
 
   const pins = data?.pins ?? [];

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from models.pin import Pin
-from utils.supabase_client import supabase
+from utils.supabase_client import supabase_db
 
 
 class IPinsRepository(ABC):
@@ -44,7 +44,7 @@ class SupabasePinsRepository(IPinsRepository):
 
     def get_pins_by_user_id(self, user_id: str) -> list[Pin]:
         response = (
-            supabase.table("pins")
+            supabase_db.table("pins")
             .select("*")
             .eq("user_id", user_id)
             .order("created_at", desc=True)
@@ -68,7 +68,7 @@ class SupabasePinsRepository(IPinsRepository):
         description: str | None = None,
     ) -> Pin:
         response = (
-            supabase.table("pins")
+            supabase_db.table("pins")
             .insert({
                 "user_id": user_id,
                 "source_type": source_type,

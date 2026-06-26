@@ -5,8 +5,15 @@ from routes.notes_routes import note_bp
 from routes.pins_routes import pins_bp
 from middleware.auth import auth_middleware
 from exceptions import AppError
+from utils.supabase_client import SUPABASE_KEY_ROLE
 
 app = Flask(__name__)
+
+if SUPABASE_KEY_ROLE == "anon":
+    app.logger.warning(
+        "SUPABASE_KEY is the anon key — database reads rely on per-request user JWT. "
+        "For production, set SUPABASE_KEY to the service role key (see server/.env.example)."
+    )
 
 CORS(
     app,

@@ -1,5 +1,5 @@
 from flask import request, g
-from utils.supabase_client import supabase
+from utils.supabase_client import supabase_auth, bind_request_db_auth
 
 public_routes = [
     "/api/auth/login",
@@ -24,13 +24,15 @@ def auth_middleware():
     token = auth_header.split(" ")[1]
 
     try:
-        response = supabase.auth.get_user(token)
+        response = supabase_auth.auth.get_user(token)
 
         if not response.user:
             return ({"message": "Invalid token"}), 401
 
         # attach user to current request
         g.user = response.user
+        g.access_token = token
+        bind_request_db_auth(token)
 
     except Exception:
         return ({"message": "Invalid or expired token"}), 401
