@@ -1,13 +1,12 @@
-import type { NavigateFunction } from "react-router-dom";
 import { NEW_NOTE_ID } from "@/constants/editor";
 import { createNote, updateNote } from "@/services/notesService";
 import { getDraft, putDraft, remapDraftKey } from "@/lib/noteDraftStore";
+import { queryClient } from "@/lib/queryClient";
 import { draftKey, type NoteDraft } from "@/types/noteDraft";
 
-export async function syncDraft(
-  draft: NoteDraft,
-  navigate: NavigateFunction,
-): Promise<NoteDraft> {
+export type SyncDraftResult = NoteDraft & { navigateToId?: string };
+
+export async function syncDraft(draft: NoteDraft): Promise<SyncDraftResult> {
   const syncing: NoteDraft = { ...draft, syncStatus: "syncing" };
   await putDraft(syncing);
 
@@ -33,8 +32,12 @@ export async function syncDraft(
         syncedAt: Date.now(),
       };
       await putDraft(synced);
-      navigate(`/editor/${note.id}`, { replace: true });
-      return synced;
+      await queryClient.invalidateQueries({ queryKey: ["notes"] });
+      return { ...synced, navigateToId: note.id };
+    }
+
+    if (draft.title.trim() === "") {
+      return draft;
     }
 
     await updateNote(
@@ -51,6 +54,7 @@ export async function syncDraft(
       syncedAt: Date.now(),
     };
     await putDraft(synced);
+    await queryClient.invalidateQueries({ queryKey: ["notes"] });
     return synced;
   } catch (err) {
     const failed: NoteDraft = { ...draft, syncStatus: "failed" };

@@ -27,7 +27,10 @@ export function useAutoSave(saveFn: () => void, delayMs: number) {
 
   useEffect(() => {
     return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
     };
   }, []);
 

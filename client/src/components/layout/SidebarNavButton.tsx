@@ -11,14 +11,16 @@ type SidebarNavButtonProps = {
   ariaLabel: string;
   children: ReactNode;
   end?: boolean;
+  onClick?: () => void;
 };
 
-export function SidebarNavLink({ to, ariaLabel, children, end }: SidebarNavButtonProps) {
+export function SidebarNavLink({ to, ariaLabel, children, end, onClick }: SidebarNavButtonProps) {
   return (
     <NavLink
       to={to}
       end={end}
       aria-label={ariaLabel}
+      onClick={onClick}
       className={({ isActive }) =>
         `${baseClassName}${isActive ? ` ${activeClassName}` : ""}`
       }

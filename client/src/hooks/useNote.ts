@@ -75,6 +75,7 @@ export function useNote(
   const navigate = useNavigate();
   const persistedNoteIdRef = useRef<string | null>(null);
   const prevNoteIdRef = useRef<string | undefined>(noteId);
+  const syncChainRef = useRef(Promise.resolve());
   const [title, setTitle] = useState("");
   const [fontSizePx, setFontSizePx] = useState(DEFAULT_FONT_SIZE_PX);
   const [isLoading, setIsLoading] = useState(true);
@@ -87,7 +88,14 @@ export function useNote(
     const prevNoteId = prevNoteIdRef.current;
     prevNoteIdRef.current = noteId;
 
-    if (prevNoteId === NEW_NOTE_ID && noteId === persistedNoteIdRef.current) {
+    if (noteId === persistedNoteIdRef.current) {
+      return;
+    }
+
+    const skipReset =
+      prevNoteId === NEW_NOTE_ID && noteId === persistedNoteIdRef.current;
+
+    if (skipReset) {
       return;
     }
 
@@ -247,7 +255,11 @@ export function useNote(
       const serverNoteId =
         persistedNoteIdRef.current ?? (isDraft ? null : noteId);
 
-      const existing = await getDraft(userId, noteId);
+      if (serverNoteId && title.trim() === "") {
+        return;
+      }
+
+      const existing = await getDraft(userId, persistedNoteIdRef.current ?? noteId);
       if (
         existing?.syncStatus === "synced" &&
         draftContentMatches(existing, title, content, nextFontSizePx)
@@ -255,21 +267,34 @@ export function useNote(
         return;
       }
 
-      const draft = await upsertDraftFromEditor({
-        userId,
-        noteId,
-        serverNoteId,
-        title,
-        content,
-        fontSizePx: nextFontSizePx,
-      });
+      const runSync = async () => {
+        const resolvedServerId = persistedNoteIdRef.current ?? serverNoteId;
+        const resolvedNoteId = resolvedServerId ?? noteId;
 
-      setError("");
-      try {
-        const synced = await syncDraft(draft, navigate);
+        const draft = await upsertDraftFromEditor({
+          userId,
+          noteId: resolvedNoteId,
+          serverNoteId: resolvedServerId,
+          title,
+          content,
+          fontSizePx: nextFontSizePx,
+        });
+
+        setError("");
+        const synced = await syncDraft(draft);
         if (synced.serverNoteId) {
           persistedNoteIdRef.current = synced.serverNoteId;
         }
+        if (synced.navigateToId) {
+          navigate(`/editor/${synced.navigateToId}`, { replace: true });
+        }
+      };
+
+      try {
+        syncChainRef.current = syncChainRef.current
+          .catch(() => {})
+          .then(() => runSync());
+        await syncChainRef.current;
       } catch (err) {
         setError("Auto-save failed. Please try again.");
         console.error("Auto-save failed:", err);

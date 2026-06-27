@@ -40,6 +40,8 @@ class NotesService:
     ):
         """Update a note for a user"""
         self.get_note_by_id(note_id, user_id)
+        if title.strip() == "":
+            raise ValidationError("Note title cannot be empty")
         return self.note_repo.update_note(
             note_id, user_id, title, content, font_size_px
         )

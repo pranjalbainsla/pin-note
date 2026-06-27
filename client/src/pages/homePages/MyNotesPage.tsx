@@ -12,6 +12,7 @@ export default function MyNotesPage() {
     queryKey: ["notes"],
     queryFn: getNotes,
     enabled: isAuthenticated && !isBootstrapping,
+    refetchOnMount: "always",
   });
 
   const notes = data?.notes ?? [];

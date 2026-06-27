@@ -28,6 +28,7 @@ export default function Editor() {
   const suggestionRangeRef = useRef<Range | null>(null);
   const scheduleAutoSaveRef = useRef<() => void>(() => {});
   const persistLocalDraftRef = useRef<() => void>(() => {});
+  const isLoadingRef = useRef(true);
 
   const editorFormat = useEditorFormat();
   const {
@@ -108,22 +109,30 @@ export default function Editor() {
   const { scheduleAutoSave, flushAutoSave } = useAutoSave(saveNote, AUTOSAVE_DELAY_MS);
 
   useEffect(() => {
+    isLoadingRef.current = isLoading;
+  }, [isLoading]);
+
+  useEffect(() => {
     scheduleAutoSaveRef.current = scheduleAutoSave;
   }, [scheduleAutoSave]);
 
+  const flushAutoSaveRef = useRef(flushAutoSave);
   useEffect(() => {
-    persistLocalDraftRef.current = () => {
-      void persistLocalDraft();
-    };
+    flushAutoSaveRef.current = flushAutoSave;
+  }, [flushAutoSave]);
+
+  useEffect(() => {
+    persistLocalDraftRef.current = persistLocalDraft;
   }, [persistLocalDraft]);
 
   useEffect(() => {
     return () => {
-      void persistLocalDraft().then(() => {
-        flushAutoSave();
+      void persistLocalDraftRef.current().then(() => {
+        if (isLoadingRef.current) return;
+        flushAutoSaveRef.current();
       });
     };
-  }, [persistLocalDraft, flushAutoSave]);
+  }, [noteId]);
 
   useEffect(() => {
     const onOnline = () => {

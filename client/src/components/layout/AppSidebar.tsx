@@ -2,6 +2,7 @@ import { FileText, Home, LogOut, Pin } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useEditorFormat } from "@/context/EditorFormatContext";
+import { queryClient } from "@/lib/queryClient";
 import ThemeToggle from "./ThemeToggle";
 import { SidebarActionButton, SidebarNavLink } from "./SidebarNavButton";
 
@@ -24,7 +25,13 @@ export default function AppSidebar() {
 
         {!isAuthPage && (
           <>
-            <SidebarNavLink to="/mynotes" ariaLabel="My notes">
+            <SidebarNavLink
+              to="/mynotes"
+              ariaLabel="My notes"
+              onClick={() => {
+                void queryClient.invalidateQueries({ queryKey: ["notes"] });
+              }}
+            >
               <FileText size={18} />
             </SidebarNavLink>
             <SidebarNavLink to="/mypins" ariaLabel="My pins">
