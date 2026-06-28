@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useNote } from "@/hooks/useNote";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { useEditorFormatMenu } from "@/hooks/useEditorFormatMenu";
+import { useWritingViewport } from "@/hooks/useWritingViewport";
 import {
   resetEditorFormatState,
   useEditorFormat,
@@ -93,6 +94,8 @@ export default function Editor() {
       scheduleAutoSaveRef.current();
     },
   });
+
+  useWritingViewport(editor, containerRef);
 
   const {
     title,
