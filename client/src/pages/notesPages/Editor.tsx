@@ -28,7 +28,7 @@ export default function Editor() {
   const containerRef = useRef<HTMLDivElement>(null);
   const suggestionRangeRef = useRef<Range | null>(null);
   const scheduleAutoSaveRef = useRef<() => void>(() => {});
-  const persistLocalDraftRef = useRef<() => void>(() => {});
+  const persistLocalDraftRef = useRef<() => Promise<void>>(async () => {});
   const isLoadingRef = useRef(true);
 
   const editorFormat = useEditorFormat();
