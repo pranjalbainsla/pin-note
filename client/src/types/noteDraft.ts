@@ -1,3 +1,5 @@
+import type { NoteFontFamily } from "@/constants/editor";
+
 export type SyncStatus = "pending" | "syncing" | "synced" | "failed";
 
 export interface NoteDraft {
@@ -8,6 +10,7 @@ export interface NoteDraft {
   title: string;
   content: string;
   fontSizePx: number;
+  fontFamily: NoteFontFamily;
   localUpdatedAt: number;
   syncedAt: number | null;
   syncStatus: SyncStatus;

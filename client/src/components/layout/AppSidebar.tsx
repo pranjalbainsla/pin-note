@@ -1,8 +1,12 @@
-import { FileText, Home, LogOut, Pin } from "lucide-react";
+import { AlignJustify, FileText, Home, LogOut, Pin } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useEditorFormat } from "@/context/EditorFormatContext";
 import { queryClient } from "@/lib/queryClient";
+import {
+  DEFAULT_FONT_FAMILY,
+  NOTE_FONT_DISPLAY_NAMES,
+} from "@/constants/editor";
 import ThemeToggle from "./ThemeToggle";
 import { SidebarActionButton, SidebarNavLink } from "./SidebarNavButton";
 
@@ -17,6 +21,7 @@ export default function AppSidebar() {
   const isEditorRoute = pathname.startsWith("/editor/");
   const showHome = !isAuthPage && pathname !== "/home";
   const formatState = editorFormat?.formatState;
+  const fontControls = editorFormat?.fontControls;
 
   return (
     <aside className="flex shrink-0 self-stretch flex-col items-center border-l border-[var(--slate-border)] px-3 py-4 min-h-0">
@@ -55,6 +60,21 @@ export default function AppSidebar() {
                 <span className="text-xs italic leading-none">I</span>
               )}
             </div>
+          )}
+          {isEditorRoute && fontControls && (
+            <SidebarActionButton
+              onClick={() => {
+                void fontControls.cycleFontFamily();
+              }}
+              ariaLabel={`Switch font (current: ${NOTE_FONT_DISPLAY_NAMES[fontControls.fontFamily]})`}
+              className={
+                fontControls.fontFamily !== DEFAULT_FONT_FAMILY
+                  ? "bg-black/5 text-[var(--slate-surface-text)]"
+                  : undefined
+              }
+            >
+              <AlignJustify size={18} />
+            </SidebarActionButton>
           )}
           {showHome && (
             <SidebarNavLink to="/home" ariaLabel="Home" end>

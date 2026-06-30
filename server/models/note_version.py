@@ -7,6 +7,7 @@ class NoteVersion:
         title: str,
         content: str,
         font_size_px: int,
+        font_family: str,
         content_hash: str,
         source: str,
         created_at: str | None = None,
@@ -17,6 +18,7 @@ class NoteVersion:
         self.title = title
         self.content = content
         self.font_size_px = font_size_px
+        self.font_family = font_family
         self.content_hash = content_hash
         self.source = source
         self.created_at = created_at
@@ -29,6 +31,7 @@ class NoteVersion:
             "title": self.title,
             "content": self.content,
             "font_size_px": self.font_size_px,
+            "font_family": self.font_family,
             "content_hash": self.content_hash,
             "source": self.source,
             "created_at": self.created_at,
@@ -40,6 +43,7 @@ class NoteVersion:
             "note_id": self.note_id,
             "title": self.title,
             "font_size_px": self.font_size_px,
+            "font_family": self.font_family,
             "source": self.source,
             "created_at": self.created_at,
             "snippet": snippet,

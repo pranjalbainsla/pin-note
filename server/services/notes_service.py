@@ -1,4 +1,4 @@
-from repositories.notes_repository import INotesRepository, DEFAULT_FONT_SIZE_PX
+from repositories.notes_repository import INotesRepository, DEFAULT_FONT_SIZE_PX, DEFAULT_FONT_FAMILY
 from exceptions import ForbiddenError, ValidationError
 from utils.note_content import is_note_empty, plain_text_snippet
 
@@ -13,11 +13,14 @@ class NotesService:
         title: str,
         content: str,
         font_size_px: int = DEFAULT_FONT_SIZE_PX,
+        font_family: str = DEFAULT_FONT_FAMILY,
     ):
         """Create a new note for the user"""
         if is_note_empty(title, content):
             raise ValidationError("Note must have a title or content")
-        return self.note_repo.create_note(user_id, title, content, font_size_px)
+        return self.note_repo.create_note(
+            user_id, title, content, font_size_px, font_family
+        )
 
     def get_notes_by_user_id(self, user_id: str):
         """Get all non-empty notes for a user"""
@@ -42,13 +45,14 @@ class NotesService:
         title: str,
         content: str,
         font_size_px: int,
+        font_family: str,
     ):
         """Update a note for a user"""
         self.get_note_by_id(note_id, user_id)
         if is_note_empty(title, content):
             raise ValidationError("Note must have a title or content")
         return self.note_repo.update_note(
-            note_id, user_id, title, content, font_size_px
+            note_id, user_id, title, content, font_size_px, font_family
         )
 
     def list_note_versions(self, note_id: str, user_id: str):

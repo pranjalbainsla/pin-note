@@ -34,11 +34,22 @@ type SidebarActionButtonProps = {
   onClick: () => void;
   ariaLabel: string;
   children: ReactNode;
+  className?: string;
 };
 
-export function SidebarActionButton({ onClick, ariaLabel, children }: SidebarActionButtonProps) {
+export function SidebarActionButton({
+  onClick,
+  ariaLabel,
+  children,
+  className,
+}: SidebarActionButtonProps) {
   return (
-    <button type="button" onClick={onClick} aria-label={ariaLabel} className={baseClassName}>
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={ariaLabel}
+      className={className ? `${baseClassName} ${className}` : baseClassName}
+    >
       {children}
     </button>
   );

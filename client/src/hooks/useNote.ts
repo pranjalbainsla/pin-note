@@ -14,23 +14,37 @@ import type { NoteDraft } from "@/types/noteDraft";
 import type { Note } from "@/types";
 import {
   clampFontSizePx,
+  DEFAULT_FONT_FAMILY,
   DEFAULT_FONT_SIZE_PX,
   NEW_NOTE_ID,
+  nextFontFamily,
+  normalizeFontFamily,
+  type NoteFontFamily,
 } from "@/constants/editor";
+
+interface NotePresentation {
+  fontSizePx: number;
+  fontFamily: NoteFontFamily;
+}
 
 interface UseNoteReturn {
   title: string;
   setTitle: React.Dispatch<React.SetStateAction<string>>;
   fontSizePx: number;
   setFontSizePx: React.Dispatch<React.SetStateAction<number>>;
+  fontFamily: NoteFontFamily;
+  setFontFamily: React.Dispatch<React.SetStateAction<NoteFontFamily>>;
   isLoading: boolean;
   error: string;
   fetchNote: () => Promise<void>;
   saveNote: () => Promise<void>;
   saveFontSize: (nextSize: number) => Promise<void>;
+  saveFontFamily: (nextFamily: NoteFontFamily) => Promise<void>;
+  cycleFontFamily: () => Promise<void>;
   persistLocalDraft: (overrides?: {
     title?: string;
     fontSizePx?: number;
+    fontFamily?: NoteFontFamily;
   }) => Promise<void>;
   retryPendingSync: () => Promise<void>;
 }
@@ -39,12 +53,13 @@ function draftContentMatches(
   draft: NoteDraft,
   title: string,
   content: string,
-  fontSizePx: number,
+  presentation: NotePresentation,
 ): boolean {
   return (
     draft.title === title &&
     draft.content === content &&
-    draft.fontSizePx === fontSizePx
+    draft.fontSizePx === presentation.fontSizePx &&
+    draft.fontFamily === presentation.fontFamily
   );
 }
 
@@ -53,6 +68,7 @@ function applyDraftToState(
   persistedNoteIdRef: React.MutableRefObject<string | null>,
   setTitle: React.Dispatch<React.SetStateAction<string>>,
   setFontSizePx: React.Dispatch<React.SetStateAction<number>>,
+  setFontFamily: React.Dispatch<React.SetStateAction<NoteFontFamily>>,
   setNoteContent: React.Dispatch<React.SetStateAction<string | null>>,
 ) {
   if (draft.serverNoteId) {
@@ -60,6 +76,7 @@ function applyDraftToState(
   }
   setTitle(draft.title);
   setFontSizePx(clampFontSizePx(draft.fontSizePx));
+  setFontFamily(normalizeFontFamily(draft.fontFamily));
   setNoteContent(draft.content);
 }
 
@@ -79,6 +96,7 @@ export function useNote(
   const syncChainRef = useRef(Promise.resolve());
   const [title, setTitle] = useState("");
   const [fontSizePx, setFontSizePx] = useState(DEFAULT_FONT_SIZE_PX);
+  const [fontFamily, setFontFamily] = useState<NoteFontFamily>(DEFAULT_FONT_FAMILY);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [noteContent, setNoteContent] = useState<string | null>(null);
@@ -103,6 +121,7 @@ export function useNote(
     persistedNoteIdRef.current = null;
     setTitle("");
     setFontSizePx(DEFAULT_FONT_SIZE_PX);
+    setFontFamily(DEFAULT_FONT_FAMILY);
     setError("");
     setNoteContent(isDraft ? "" : null);
   }, [noteId, isDraft]);
@@ -114,24 +133,32 @@ export function useNote(
   }, [editor, noteContent]);
 
   const getEditorSnapshot = useCallback(
-    (nextFontSizePx: number) => {
+    (nextPresentation: NotePresentation) => {
       if (!editor) return null;
       const content = getCleanHTML(editor.getHTML());
-      return { content, fontSizePx: nextFontSizePx };
+      return { content, ...nextPresentation };
     },
     [editor],
   );
 
   const persistLocalDraft = useCallback(
-    async (overrides?: { title?: string; fontSizePx?: number }) => {
+    async (overrides?: {
+      title?: string;
+      fontSizePx?: number;
+      fontFamily?: NoteFontFamily;
+    }) => {
       if (!editor || !noteId || !userId) return;
 
       const draftTitle = overrides?.title ?? title;
-      const draftFontSizePx = overrides?.fontSizePx ?? fontSizePx;
-      const snapshot = getEditorSnapshot(draftFontSizePx);
+      const draftPresentation: NotePresentation = {
+        fontSizePx: overrides?.fontSizePx ?? fontSizePx,
+        fontFamily: overrides?.fontFamily ?? fontFamily,
+      };
+      const snapshot = getEditorSnapshot(draftPresentation);
       if (!snapshot) return;
 
-      const { content } = snapshot;
+      const { content, fontSizePx: draftFontSizePx, fontFamily: draftFontFamily } =
+        snapshot;
       if (isNoteEmpty(draftTitle, content)) return;
 
       const serverNoteId =
@@ -144,9 +171,10 @@ export function useNote(
         title: draftTitle,
         content,
         fontSizePx: draftFontSizePx,
+        fontFamily: draftFontFamily,
       });
     },
-    [editor, noteId, userId, title, fontSizePx, isDraft, getEditorSnapshot],
+    [editor, noteId, userId, title, fontSizePx, fontFamily, isDraft, getEditorSnapshot],
   );
 
   const fetchNote = useCallback(async () => {
@@ -205,6 +233,7 @@ export function useNote(
         persistedNoteIdRef,
         setTitle,
         setFontSizePx,
+        setFontFamily,
         setNoteContent,
       );
     } else if (serverNote) {
@@ -213,6 +242,7 @@ export function useNote(
       setFontSizePx(
         clampFontSizePx(serverNote.font_size_px ?? DEFAULT_FONT_SIZE_PX),
       );
+      setFontFamily(normalizeFontFamily(serverNote.font_family ?? DEFAULT_FONT_FAMILY));
       setNoteContent(serverNote.content ?? "");
       setError("");
 
@@ -225,6 +255,9 @@ export function useNote(
         fontSizePx: clampFontSizePx(
           serverNote.font_size_px ?? DEFAULT_FONT_SIZE_PX,
         ),
+        fontFamily: normalizeFontFamily(
+          serverNote.font_family ?? DEFAULT_FONT_FAMILY,
+        ),
         syncStatus: "synced",
         syncedAt: serverUpdatedAt || Date.now(),
       });
@@ -236,10 +269,10 @@ export function useNote(
   }, [noteId, userId, isDraft]);
 
   const persistNote = useCallback(
-    async (nextFontSizePx: number) => {
+    async (nextPresentation: NotePresentation) => {
       if (!editor || !noteId || !userId) return;
 
-      const snapshot = getEditorSnapshot(nextFontSizePx);
+      const snapshot = getEditorSnapshot(nextPresentation);
       if (!snapshot) return;
 
       const { content } = snapshot;
@@ -251,7 +284,7 @@ export function useNote(
       const existing = await getDraft(userId, persistedNoteIdRef.current ?? noteId);
       if (
         existing?.syncStatus === "synced" &&
-        draftContentMatches(existing, title, content, nextFontSizePx)
+        draftContentMatches(existing, title, content, nextPresentation)
       ) {
         return;
       }
@@ -266,7 +299,8 @@ export function useNote(
           serverNoteId: resolvedServerId,
           title,
           content,
-          fontSizePx: nextFontSizePx,
+          fontSizePx: nextPresentation.fontSizePx,
+          fontFamily: nextPresentation.fontFamily,
         });
 
         setError("");
@@ -293,8 +327,8 @@ export function useNote(
   );
 
   const saveNote = useCallback(async () => {
-    await persistNote(fontSizePx);
-  }, [persistNote, fontSizePx]);
+    await persistNote({ fontSizePx, fontFamily });
+  }, [persistNote, fontSizePx, fontFamily]);
 
   const retryPendingSync = useCallback(async () => {
     if (!noteId || !userId) return;
@@ -308,23 +342,44 @@ export function useNote(
     async (nextSize: number) => {
       if (!editor || !noteId) return;
       const clamped = clampFontSizePx(nextSize);
+      const nextPresentation = { fontSizePx: clamped, fontFamily };
       setFontSizePx(clamped);
       await persistLocalDraft({ fontSizePx: clamped });
-      await persistNote(clamped);
+      await persistNote(nextPresentation);
     },
-    [editor, noteId, persistLocalDraft, persistNote],
+    [editor, noteId, fontFamily, persistLocalDraft, persistNote],
   );
+
+  const saveFontFamily = useCallback(
+    async (nextFamily: NoteFontFamily) => {
+      if (!editor || !noteId) return;
+      const normalized = normalizeFontFamily(nextFamily);
+      const nextPresentation = { fontSizePx, fontFamily: normalized };
+      setFontFamily(normalized);
+      await persistLocalDraft({ fontFamily: normalized });
+      await persistNote(nextPresentation);
+    },
+    [editor, noteId, fontSizePx, persistLocalDraft, persistNote],
+  );
+
+  const cycleFontFamily = useCallback(async () => {
+    await saveFontFamily(nextFontFamily(fontFamily));
+  }, [fontFamily, saveFontFamily]);
 
   return {
     title,
     setTitle,
     fontSizePx,
     setFontSizePx,
+    fontFamily,
+    setFontFamily,
     isLoading,
     error,
     fetchNote,
     saveNote,
     saveFontSize,
+    saveFontFamily,
+    cycleFontFamily,
     persistLocalDraft,
     retryPendingSync,
   };

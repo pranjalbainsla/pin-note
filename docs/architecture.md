@@ -172,17 +172,17 @@ Theme is user-controlled via the toggle, separate from the OS `prefers-color-sch
 - **Theme** — `ThemeContext` holds `light` / `dark` preference; persists to `localStorage` and drives slate CSS variables.
 - **Server data** — TanStack Query for notes and pins lists (`useQuery` in page components).
 - **Editor state** — Custom hooks isolate concerns:
-  - `useNote` — fetch/save a single note (content + `font_size_px`), loads into Tiptap
+  - `useNote` — fetch/save a single note (content + `font_size_px` + `font_family`), loads into Tiptap
   - `useAutoSave` — debounced server sync (1 s)
   - **Local note drafts** — IndexedDB (`noteDraftStore` via `idb`) keyed by `userId:noteId`:
-    - Immediate write-through on every edit (title, body, font size)
+    - Immediate write-through on every edit (title, body, font size, font family)
     - Debounced background sync to the API; `syncStatus`: `pending` → `syncing` → `synced` | `failed`
     - On load, auto-restore local draft when `localUpdatedAt` is newer than server `updated_at`, or when server fetch fails
     - `window.online` retries drafts in `pending`/`failed` state
     - Logout clears all drafts for the user
     - Multi-tab: last write wins (known limitation)
   - `useEditorFormatMenu` — slash format menu open/close state
-  - `EditorFormatContext` — bold/italic active state for sidebar indicators
+  - `EditorFormatContext` — bold/italic active state for sidebar indicators; font cycle controls for editor routes
 
 ### API client
 
@@ -277,9 +277,10 @@ sequenceDiagram
 
 1. User types `/` → `slashFormatMenu` opens `EditorFormatMenu` at cursor
 2. A⁻/A⁺ adjusts `font_size_px` (14–28, step 2) on the whole document; saved immediately
-3. B/I toggles inline marks; menu closes and `/` trigger is removed
-4. Escape or backdrop click dismisses the menu
-5. **Ctrl+C** exits active bold/italic at the cursor (`unsetBold` / `unsetItalic` in `Editor.tsx`; only when a mark is active)
+3. Sidebar **AlignJustify** icon (editor routes only) cycles `font_family` (`newsreader` ↔ `google-sans-flex`); saved immediately with opacity crossfade on the body wrapper
+4. B/I toggles inline marks; menu closes and `/` trigger is removed
+5. Escape or backdrop click dismisses the menu
+6. **Ctrl+C** exits active bold/italic at the cursor (`unsetBold` / `unsetItalic` in `Editor.tsx`; only when a mark is active)
 
 ### Pin insertion in editor (removed)
 
@@ -303,6 +304,7 @@ Migrations live in [`supabase/migrations/`](../supabase/migrations/). Apply them
 | `title` | Note title |
 | `content` | HTML string |
 | `font_size_px` | Document-wide body font size (14–28, default 18) |
+| `font_family` | Document-wide body font (`newsreader` default, `google-sans-flex`) |
 | `updated_at` | Sort order (desc) |
 
 **pins**

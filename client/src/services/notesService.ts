@@ -1,6 +1,7 @@
 import { apiFetch } from "./apiFetch";
 import type { Note } from "@/types";
-import { DEFAULT_FONT_SIZE_PX } from "@/constants/editor";
+import { DEFAULT_FONT_SIZE_PX, DEFAULT_FONT_FAMILY } from "@/constants/editor";
+import type { NoteFontFamily } from "@/constants/editor";
 
 type NotesResponse = {
   status: "ok";
@@ -29,13 +30,19 @@ export async function createNote(
   title: string = "",
   content: string = "",
   fontSizePx: number = DEFAULT_FONT_SIZE_PX,
+  fontFamily: NoteFontFamily = DEFAULT_FONT_FAMILY,
 ) {
   return apiFetch<NoteResponse>("/notes/create", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ title, content, font_size_px: fontSizePx }),
+    body: JSON.stringify({
+      title,
+      content,
+      font_size_px: fontSizePx,
+      font_family: fontFamily,
+    }),
   }, "Failed to create note");
 }
 
@@ -45,12 +52,18 @@ export async function updateNote(
   title: string,
   content: string,
   fontSizePx: number,
+  fontFamily: NoteFontFamily = DEFAULT_FONT_FAMILY,
 ) {
   return apiFetch<UpdateNoteResponse>(`/notes/update/${noteId}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ title, content, font_size_px: fontSizePx }),
+    body: JSON.stringify({
+      title,
+      content,
+      font_size_px: fontSizePx,
+      font_family: fontFamily,
+    }),
   }, "Failed to update note");
 }

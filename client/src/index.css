@@ -25,6 +25,7 @@
 :root {
   --font-ui: "Inter", system-ui, sans-serif;
   --font-serif: "Newsreader", Georgia, serif;
+  --font-google-sans-flex: "Google Sans Flex", sans-serif;
   --color-heading: #2d2d2d;
   --color-body: #4a4a4a;
   --color-bg: #f7f7f5;
@@ -144,7 +145,23 @@ code {
 }
 
 .editor-font-wrapper {
-  transition: font-size 0.35s ease;
+  transition: font-size 0.35s ease, opacity 0.3s ease;
+}
+
+.editor-font-wrapper.is-font-transitioning {
+  opacity: 0.35;
+}
+
+.editor-font-google-sans-flex {
+  font-family: var(--font-google-sans-flex);
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+  font-variation-settings:
+    "slnt" 0,
+    "wdth" 100,
+    "GRAD" 0,
+    "ROND" 0;
 }
 
 .editor-canvas p.is-editor-empty:first-child::before {

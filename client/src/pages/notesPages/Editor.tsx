@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useEditor, type Editor as TiptapEditor } from "@tiptap/react";
 import type { Range } from "@tiptap/core";
@@ -11,14 +11,14 @@ import {
   resetEditorFormatState,
   useEditorFormat,
 } from "@/context/EditorFormatContext";
-import { AUTOSAVE_DELAY_MS, FONT_SIZE_STEP_PX } from "@/constants/editor";
+import { AUTOSAVE_DELAY_MS, FONT_SIZE_STEP_PX, NOTE_FONT_CSS } from "@/constants/editor";
 import { getEditorExtensions } from "@/lib/editorExtensions";
 import EditorToolbar from "@/components/editor/EditorToolbar";
 import NoteEditor from "@/components/editor/NoteEditor";
 import EditorFormatMenu from "@/components/editor/EditorFormatMenu";
 
 const EDITOR_CLASS =
-  "editor-canvas min-h-[500px] outline-none leading-[1.5] text-left max-w-none font-[family-name:var(--font-serif)]";
+  "editor-canvas min-h-[500px] outline-none leading-[1.5] text-left max-w-none";
 
 /**
  * Intentionally thin — wires hooks to components, owns no logic of its own.
@@ -101,15 +101,60 @@ export default function Editor() {
     title,
     setTitle,
     fontSizePx,
+    fontFamily,
     isLoading,
     error: noteError,
     fetchNote,
     saveNote,
     saveFontSize,
+    cycleFontFamily,
     persistLocalDraft,
     retryPendingSync,
   } = useNote(noteId, editor, user?.id);
+  const [displayedFontFamily, setDisplayedFontFamily] = useState(fontFamily);
+  const [isFontTransitioning, setIsFontTransitioning] = useState(false);
+  const skipFontTransitionRef = useRef(true);
   const { scheduleAutoSave, flushAutoSave } = useAutoSave(saveNote, AUTOSAVE_DELAY_MS);
+
+  useEffect(() => {
+    if (!editorFormat) return;
+
+    editorFormat.registerFontControls({ fontFamily, cycleFontFamily });
+    return () => {
+      editorFormat.unregisterFontControls();
+    };
+  }, [editorFormat, fontFamily, cycleFontFamily]);
+
+  useEffect(() => {
+    skipFontTransitionRef.current = true;
+    setDisplayedFontFamily(fontFamily);
+    setIsFontTransitioning(false);
+  }, [noteId]);
+
+  useEffect(() => {
+    if (skipFontTransitionRef.current) {
+      skipFontTransitionRef.current = false;
+      setDisplayedFontFamily(fontFamily);
+      return;
+    }
+
+    if (fontFamily === displayedFontFamily) {
+      return;
+    }
+
+    setIsFontTransitioning(true);
+    const swapTimer = window.setTimeout(() => {
+      setDisplayedFontFamily(fontFamily);
+    }, 150);
+    const endTimer = window.setTimeout(() => {
+      setIsFontTransitioning(false);
+    }, 300);
+
+    return () => {
+      window.clearTimeout(swapTimer);
+      window.clearTimeout(endTimer);
+    };
+  }, [fontFamily, displayedFontFamily]);
 
   useEffect(() => {
     isLoadingRef.current = isLoading;
@@ -261,8 +306,17 @@ export default function Editor() {
         />
 
         <div
-          className="editor-font-wrapper"
-          style={{ fontSize: `${fontSizePx}px` }}
+          className={`editor-font-wrapper${
+            isFontTransitioning ? " is-font-transitioning" : ""
+          }${
+            displayedFontFamily === "google-sans-flex"
+              ? " editor-font-google-sans-flex"
+              : ""
+          }`}
+          style={{
+            fontSize: `${fontSizePx}px`,
+            fontFamily: NOTE_FONT_CSS[displayedFontFamily],
+          }}
         >
           <NoteEditor editor={editor} />
         </div>

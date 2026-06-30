@@ -281,11 +281,13 @@ Create a new note for the authenticated user.
 ```json
 {
   "title": "",
-  "content": ""
+  "content": "",
+  "font_size_px": 18,
+  "font_family": "newsreader"
 }
 ```
 
-Both fields default to `""` if omitted.
+Both text fields default to `""` if omitted. `font_size_px` defaults to `18`. `font_family` defaults to `newsreader` (`newsreader` | `google-sans-flex`).
 
 **Behavior:** Creates the note and an initial version snapshot (`source: autosave`) via the `create_note_with_version` Postgres RPC.
 
@@ -298,7 +300,9 @@ Both fields default to `""` if omitted.
     "id": "uuid",
     "user_id": "uuid",
     "title": "",
-    "content": ""
+    "content": "",
+    "font_size_px": 18,
+    "font_family": "newsreader"
   }
 }
 ```
@@ -309,14 +313,16 @@ Both fields default to `""` if omitted.
 
 Update a note's title and content. Scoped to the authenticated user (`user_id` match in the repository query).
 
-**Behavior:** Before applying changes, snapshots the current note into `note_versions` when `(title, content, font_size_px)` hash changes. Skips the update entirely when the hash is unchanged. Prunes old versions (last 50 and 30 days) after each new snapshot.
+**Behavior:** Before applying changes, snapshots the current note into `note_versions` when `(title, content, font_size_px, font_family)` hash changes. Skips the update entirely when the hash is unchanged. Prunes old versions (last 50 and 30 days) after each new snapshot.
 
 **Request body**
 
 ```json
 {
   "title": "Updated title",
-  "content": "<p>Updated content</p>"
+  "content": "<p>Updated content</p>",
+  "font_size_px": 18,
+  "font_family": "newsreader"
 }
 ```
 
@@ -351,6 +357,7 @@ List version history for a note. Newest first, up to 50 versions.
       "note_id": "uuid",
       "title": "My note",
       "font_size_px": 18,
+      "font_family": "newsreader",
       "source": "autosave",
       "created_at": "2026-06-25T12:00:00Z",
       "snippet": "Hello world…"
@@ -384,6 +391,7 @@ Fetch a full version snapshot (including HTML `content`).
     "title": "My note",
     "content": "<p>Hello</p>",
     "font_size_px": 18,
+    "font_family": "newsreader",
     "content_hash": "hex",
     "source": "autosave",
     "created_at": "2026-06-25T12:00:00Z"
@@ -415,6 +423,7 @@ Restore a note to a previous version. Snapshots the current note first (`source:
     "title": "My note",
     "content": "<p>Hello</p>",
     "font_size_px": 18,
+    "font_family": "newsreader",
     "updated_at": "2026-06-25T12:05:00Z"
   }
 }

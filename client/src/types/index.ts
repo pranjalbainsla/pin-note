@@ -18,6 +18,7 @@ export type Note = {
     title: string;
     content: string | null;
     font_size_px: number;
+    font_family: string;
     created_at: string | null;
     updated_at: string | null;
 }

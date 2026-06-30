@@ -1,4 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
+import { DEFAULT_FONT_FAMILY } from "@/constants/editor";
 import {
   draftKey,
   type NoteDraft,
@@ -6,7 +7,7 @@ import {
 } from "@/types/noteDraft";
 
 const DB_NAME = "better-note-drafts";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = "drafts";
 
 interface NoteDraftDB extends DBSchema {
@@ -21,9 +22,26 @@ let dbPromise: Promise<IDBPDatabase<NoteDraftDB>> | null = null;
 function getDB(): Promise<IDBPDatabase<NoteDraftDB>> {
   if (!dbPromise) {
     dbPromise = openDB<NoteDraftDB>(DB_NAME, DB_VERSION, {
-      upgrade(db) {
+      async upgrade(db, oldVersion) {
         if (!db.objectStoreNames.contains(STORE_NAME)) {
           db.createObjectStore(STORE_NAME, { keyPath: "key" });
+        }
+
+        if (oldVersion < 2) {
+          const tx = db.transaction(STORE_NAME, "readwrite");
+          const store = tx.objectStore(STORE_NAME);
+          let cursor = await store.openCursor();
+          while (cursor) {
+            const draft = cursor.value as NoteDraft;
+            if (!draft.fontFamily) {
+              await cursor.update({
+                ...draft,
+                fontFamily: DEFAULT_FONT_FAMILY,
+              });
+            }
+            cursor = await cursor.continue();
+          }
+          await tx.done;
         }
       },
     });
@@ -102,6 +120,7 @@ export interface UpsertDraftInput {
   title: string;
   content: string;
   fontSizePx: number;
+  fontFamily: NoteDraft["fontFamily"];
   syncStatus?: SyncStatus;
   syncedAt?: number | null;
 }
@@ -115,7 +134,8 @@ export async function upsertDraftFromEditor(
     !existing ||
     existing.title !== input.title ||
     existing.content !== input.content ||
-    existing.fontSizePx !== input.fontSizePx;
+    existing.fontSizePx !== input.fontSizePx ||
+    existing.fontFamily !== input.fontFamily;
 
   const key = draftKey(input.userId, input.noteId);
   const draft: NoteDraft = {
@@ -126,6 +146,7 @@ export async function upsertDraftFromEditor(
     title: input.title,
     content: input.content,
     fontSizePx: input.fontSizePx,
+    fontFamily: input.fontFamily,
     localUpdatedAt: Date.now(),
     syncedAt: input.syncedAt ?? existing?.syncedAt ?? null,
     syncStatus:

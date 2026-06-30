@@ -6,6 +6,7 @@ class Note:
         title: str,
         content: str,
         font_size_px: int = 18,
+        font_family: str = "newsreader",
         updated_at: str | None = None,
     ):
         self.id = id
@@ -13,6 +14,7 @@ class Note:
         self.title = title
         self.content = content
         self.font_size_px = font_size_px
+        self.font_family = font_family
         self.updated_at = updated_at
 
     def to_dict(self):
@@ -23,5 +25,6 @@ class Note:
             "title": self.title,
             "content": self.content,
             "font_size_px": self.font_size_px,
+            "font_family": self.font_family,
             "updated_at": self.updated_at,
         }

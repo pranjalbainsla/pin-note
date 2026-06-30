@@ -145,11 +145,26 @@ This document records architectural choices **inferred from the current codebase
 
 ---
 
+## Per-note font family in database (`font_family`)
+
+**Decision:** Store document-wide font family as `font_family` (text enum: `newsreader`, `google-sans-flex`; default `newsreader`) on the `notes` table — not inline in HTML.
+
+**Why it was chosen:** Font family applies uniformly to the note body (same pattern as font size). A separate column keeps presentation out of content HTML. Keys map to CSS variables client-side; the sidebar cycles through an ordered registry in `constants/editor.ts`.
+
+**Tradeoffs:**
+
+- (+) Clean separation of content vs. display preference
+- (+) Opacity crossfade on `.editor-font-wrapper` when switching fonts
+- (+) Allowlisted server-side and in DB `CHECK` constraint
+- (−) Requires migration, version-hash update, and API changes on create/update
+
+---
+
 ## Client-side-only floating pin positions (legacy / unused in editor)
 
 **Decision:** Pin cards (`FloatingPin` via `react-rnd`) were designed to store position/size in React state only — not persisted to the server. The editor no longer inserts pins via `/`; pin management remains on Home and My Pins pages.
 
-**Why it appears to have been chosen:** `usePins` manages `floatingPins` in component state. `saveNote` saves title, HTML content, and `font_size_px` from the Tiptap editor.
+**Why it appears to have been chosen:** `usePins` manages `floatingPins` in component state. `saveNote` saves title, HTML content, `font_size_px`, and `font_family` from the Tiptap editor.
 
 **Tradeoffs:**
 

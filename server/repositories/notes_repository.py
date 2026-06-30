@@ -8,11 +8,19 @@ from exceptions import NotFoundError
 MIN_FONT_SIZE_PX = 14
 MAX_FONT_SIZE_PX = 28
 DEFAULT_FONT_SIZE_PX = 18
+DEFAULT_FONT_FAMILY = "newsreader"
+ALLOWED_FONT_FAMILIES = frozenset({"newsreader", "google-sans-flex"})
 VERSION_LIST_LIMIT = 50
 
 
 def clamp_font_size_px(size: int) -> int:
     return max(MIN_FONT_SIZE_PX, min(MAX_FONT_SIZE_PX, size))
+
+
+def normalize_font_family(font_family: str) -> str:
+    if font_family in ALLOWED_FONT_FAMILIES:
+        return font_family
+    return DEFAULT_FONT_FAMILY
 
 
 def _note_from_row(note_data: dict) -> Note:
@@ -22,6 +30,9 @@ def _note_from_row(note_data: dict) -> Note:
         title=note_data["title"],
         content=note_data["content"],
         font_size_px=note_data.get("font_size_px", DEFAULT_FONT_SIZE_PX),
+        font_family=normalize_font_family(
+            note_data.get("font_family", DEFAULT_FONT_FAMILY)
+        ),
         updated_at=note_data.get("updated_at"),
     )
 
@@ -45,6 +56,9 @@ def _version_from_row(version_data: dict) -> NoteVersion:
         title=version_data["title"],
         content=version_data["content"],
         font_size_px=version_data.get("font_size_px", DEFAULT_FONT_SIZE_PX),
+        font_family=normalize_font_family(
+            version_data.get("font_family", DEFAULT_FONT_FAMILY)
+        ),
         content_hash=version_data["content_hash"],
         source=version_data["source"],
         created_at=version_data.get("created_at"),
@@ -75,6 +89,7 @@ class INotesRepository(ABC):
         title: str,
         content: str,
         font_size_px: int = DEFAULT_FONT_SIZE_PX,
+        font_family: str = DEFAULT_FONT_FAMILY,
     ) -> Note:
         """Create a new note."""
         pass
@@ -92,6 +107,7 @@ class INotesRepository(ABC):
         title: str,
         content: str,
         font_size_px: int,
+        font_family: str,
     ) -> None:
         """Update a note."""
         pass
@@ -116,7 +132,7 @@ class SupabaseNotesRepository(INotesRepository):
     def get_notes_by_user_id(self, user_id: str) -> list[Note]:
         response = (
             supabase_db.table("notes")
-            .select("id, user_id, title, content, font_size_px, updated_at")
+            .select("id, user_id, title, content, font_size_px, font_family, updated_at")
             .eq("user_id", user_id)
             .order("updated_at", desc=True)
             .execute()
@@ -127,7 +143,7 @@ class SupabaseNotesRepository(INotesRepository):
     def get_note_by_id(self, note_id: str) -> Note:
         response = (
             supabase_db.table("notes")
-            .select("id, user_id, title, content, font_size_px, updated_at")
+            .select("id, user_id, title, content, font_size_px, font_family, updated_at")
             .eq("id", note_id)
             .execute()
         )
@@ -143,6 +159,7 @@ class SupabaseNotesRepository(INotesRepository):
         title: str,
         content: str,
         font_size_px: int = DEFAULT_FONT_SIZE_PX,
+        font_family: str = DEFAULT_FONT_FAMILY,
     ) -> Note:
         try:
             response = supabase_db.rpc(
@@ -152,6 +169,7 @@ class SupabaseNotesRepository(INotesRepository):
                     "p_title": title,
                     "p_content": content,
                     "p_font_size_px": clamp_font_size_px(font_size_px),
+                    "p_font_family": normalize_font_family(font_family),
                     "p_source": "autosave",
                 },
             ).execute()
@@ -174,6 +192,7 @@ class SupabaseNotesRepository(INotesRepository):
         title: str,
         content: str,
         font_size_px: int,
+        font_family: str,
     ) -> None:
         try:
             supabase_db.rpc(
@@ -184,6 +203,7 @@ class SupabaseNotesRepository(INotesRepository):
                     "p_title": title,
                     "p_content": content,
                     "p_font_size_px": clamp_font_size_px(font_size_px),
+                    "p_font_family": normalize_font_family(font_family),
                     "p_source": "autosave",
                 },
             ).execute()
@@ -194,7 +214,7 @@ class SupabaseNotesRepository(INotesRepository):
         response = (
             supabase_db.table("note_versions")
             .select(
-                "id, note_id, user_id, title, content, font_size_px, "
+                "id, note_id, user_id, title, content, font_size_px, font_family, "
                 "content_hash, source, created_at"
             )
             .eq("note_id", note_id)
@@ -210,7 +230,7 @@ class SupabaseNotesRepository(INotesRepository):
         response = (
             supabase_db.table("note_versions")
             .select(
-                "id, note_id, user_id, title, content, font_size_px, "
+                "id, note_id, user_id, title, content, font_size_px, font_family, "
                 "content_hash, source, created_at"
             )
             .eq("id", version_id)

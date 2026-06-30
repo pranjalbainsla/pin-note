@@ -20,6 +20,7 @@ export async function syncDraft(draft: NoteDraft): Promise<SyncDraftResult> {
         draft.title,
         draft.content,
         draft.fontSizePx,
+        draft.fontFamily,
       );
 
       await remapDraftKey(draft.userId, draft.noteId, note.id);
@@ -46,6 +47,7 @@ export async function syncDraft(draft: NoteDraft): Promise<SyncDraftResult> {
       draft.title,
       draft.content,
       draft.fontSizePx,
+      draft.fontFamily,
     );
 
     const synced: NoteDraft = {
