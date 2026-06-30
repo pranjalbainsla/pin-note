@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import type { Editor } from "@tiptap/react";
 import { getNoteById } from "@/services/notesService";
 import {
+  deleteDraft,
   getDraft,
   upsertDraftFromEditor,
 } from "@/lib/noteDraftStore";
@@ -177,21 +178,13 @@ export function useNote(
       }
     }
 
-    const localDraft = await getDraft(userId, noteId);
-
     if (isDraft) {
-      if (localDraft) {
-        applyDraftToState(
-          localDraft,
-          persistedNoteIdRef,
-          setTitle,
-          setFontSizePx,
-          setNoteContent,
-        );
-      }
+      await deleteDraft(userId, noteId);
       setIsLoading(false);
       return;
     }
+
+    const localDraft = await getDraft(userId, noteId);
 
     const serverUpdatedAt = serverNote?.updated_at
       ? Date.parse(serverNote.updated_at)
