@@ -248,10 +248,6 @@ export function useNote(
       const serverNoteId =
         persistedNoteIdRef.current ?? (isDraft ? null : noteId);
 
-      if (serverNoteId && title.trim() === "") {
-        return;
-      }
-
       const existing = await getDraft(userId, persistedNoteIdRef.current ?? noteId);
       if (
         existing?.syncStatus === "synced" &&

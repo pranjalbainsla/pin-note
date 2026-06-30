@@ -3,6 +3,7 @@ import { createNote, updateNote } from "@/services/notesService";
 import { getDraft, putDraft, remapDraftKey } from "@/lib/noteDraftStore";
 import { queryClient } from "@/lib/queryClient";
 import { draftKey, type NoteDraft } from "@/types/noteDraft";
+import { isNoteEmpty } from "@/utils/isNoteEmpty";
 
 export type SyncDraftResult = NoteDraft & { navigateToId?: string };
 
@@ -36,7 +37,7 @@ export async function syncDraft(draft: NoteDraft): Promise<SyncDraftResult> {
       return { ...synced, navigateToId: note.id };
     }
 
-    if (draft.title.trim() === "") {
+    if (isNoteEmpty(draft.title, draft.content)) {
       return draft;
     }
 

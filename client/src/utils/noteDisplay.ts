@@ -1,3 +1,7 @@
+export function noteListTitle(title: string): string {
+  return title.trim() || "Untitled";
+}
+
 export function formatNoteDate(dateStr: string | null): string {
   if (!dateStr) return "";
 

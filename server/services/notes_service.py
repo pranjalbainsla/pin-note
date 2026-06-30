@@ -20,8 +20,13 @@ class NotesService:
         return self.note_repo.create_note(user_id, title, content, font_size_px)
 
     def get_notes_by_user_id(self, user_id: str):
-        """Get all notes for a user"""
-        return self.note_repo.get_notes_by_user_id(user_id)
+        """Get all non-empty notes for a user"""
+        notes = self.note_repo.get_notes_by_user_id(user_id)
+        return [
+            note
+            for note in notes
+            if not is_note_empty(note.title, note.content)
+        ]
 
     def get_note_by_id(self, note_id: str, user_id: str):
         """Get a note by its ID if it belongs to the user"""
@@ -40,8 +45,8 @@ class NotesService:
     ):
         """Update a note for a user"""
         self.get_note_by_id(note_id, user_id)
-        if title.strip() == "":
-            raise ValidationError("Note title cannot be empty")
+        if is_note_empty(title, content):
+            raise ValidationError("Note must have a title or content")
         return self.note_repo.update_note(
             note_id, user_id, title, content, font_size_px
         )

@@ -118,7 +118,6 @@ class SupabaseNotesRepository(INotesRepository):
             supabase_db.table("notes")
             .select("id, user_id, title, content, font_size_px, updated_at")
             .eq("user_id", user_id)
-            .neq("title", "")
             .order("updated_at", desc=True)
             .execute()
         )

@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { getNotes } from "@/services/notesService";
 import type { Note } from "@/types";
-import { formatNoteDate } from "@/utils/noteDisplay";
+import { formatNoteDate, noteListTitle } from "@/utils/noteDisplay";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 
@@ -48,7 +48,7 @@ export default function MyNotesPage() {
                   className={`flex w-full items-center justify-between gap-4 py-3.5 text-left cursor-pointer rounded-xl hover:bg-black/[0.03] transition-colors duration-150 border-b border-[var(--slate-border)]${index === 0 ? " border-t" : ""}`}
                 >
                   <span className="min-w-0 truncate px-2 font-medium text-[var(--slate-surface-text)] font-[family-name:var(--font-ui)]">
-                    {note.title}
+                    {noteListTitle(note.title)}
                   </span>
                   <span className="shrink-0 text-sm px-2 text-[var(--slate-muted)] font-[family-name:var(--font-ui)]">
                     {formatNoteDate(note.updated_at)}
